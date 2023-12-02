@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/webbben/code-duel/firebase"
 	"github.com/webbben/code-duel/models"
 )
 
@@ -39,12 +40,21 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// In a real application, you would save the new user to the database
-	// For simplicity, let's print the user details for now
+	firebase.CreateUser(&newUser)
 	fmt.Printf("New User: %+v\n", newUser)
 
 	// Respond with a success message
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	fmt.Fprintf(w, `{"message": "User created successfully"}`)
+}
+
+func Test(w http.ResponseWriter, r *http.Request) {
+	client := firebase.GetFirestoreClient()
+	if client == nil {
+		fmt.Println("client is null!")
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	fmt.Fprintf(w, `{"message": "Test!"}`)
 }
