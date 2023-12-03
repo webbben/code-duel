@@ -1,5 +1,4 @@
-// server/handlers/user_handlers.go
-package handlers
+package userHandlers
 
 import (
 	"encoding/json"
@@ -32,21 +31,52 @@ func GetUserHandler(w http.ResponseWriter, r *http.Request) {
 
 // CreateUserHandler handles POST requests to create a new user
 func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	// Decode the incoming JSON payload into a User struct
 	var newUser models.User
 	err := json.NewDecoder(r.Body).Decode(&newUser)
 	if err != nil {
+		fmt.Println("error creating user!")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	firebase.CreateUser(&newUser)
+	var success bool
+	firebase.CreateUser(&newUser, &success)
+
+	if success == false {
+		response := map[string]interface{}{
+			"success": false,
+			"error":   "failed to create user",
+		}
+		responseJSON, err := json.Marshal(response)
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		// respond with 400 bad request message
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(responseJSON)
+		return
+	}
+
+	response := map[string]interface{}{
+		"success": true,
+		"user":    newUser,
+	}
+	responseJSON, err := json.Marshal(response)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
 	fmt.Printf("New User: %+v\n", newUser)
 
 	// Respond with a success message
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	fmt.Fprintf(w, `{"message": "User created successfully"}`)
+	w.Write(responseJSON)
 }
 
 func Test(w http.ResponseWriter, r *http.Request) {
@@ -57,4 +87,8 @@ func Test(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	fmt.Fprintf(w, `{"message": "Test!"}`)
+}
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 }

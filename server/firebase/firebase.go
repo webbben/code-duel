@@ -13,7 +13,6 @@ import (
 )
 
 var firestoreClient *firestore.Client = nil
-var test string = "start"
 
 func init() {
 	// Use a service account
@@ -33,19 +32,20 @@ func init() {
 	fmt.Println("firestore init complete")
 }
 
-func CreateUser(user *models.User) {
-	//fmt.Printf("creating user")
-	fmt.Println(test)
+func CreateUser(user *models.User, success *bool) {
+	*success = true
 	if firestoreClient == nil {
 		fmt.Printf("firestore client is null!")
+		*success = false
 		return
 	}
 	_, _, err := firestoreClient.Collection("users").Add(context.Background(), map[string]interface{}{
 		"username": user.Username,
-		"email":    user.Username,
+		"email":    user.Email,
 	})
 	if err != nil {
 		log.Fatalf("Failed adding user: %v", err)
+		*success = false
 	}
 }
 

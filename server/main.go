@@ -8,19 +8,20 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/webbben/code-duel/firebase"
-	"github.com/webbben/code-duel/handlers"
+	userHandlers "github.com/webbben/code-duel/handlers"
 )
 
 func main() {
-
 	_ = firebase.GetFirestoreClient()
-
 	router := mux.NewRouter()
+
+	router.HandleFunc("/{route:.*}", CORSOptionsHandler).Methods(http.MethodOptions)
+
 	router.HandleFunc("/", YourHandlerFunction).Methods("GET")
 
-	router.HandleFunc("/users/{id}", handlers.GetUserHandler).Methods("GET")
-	router.HandleFunc("/users", handlers.CreateUserHandler).Methods("POST")
-	router.HandleFunc("/test", handlers.Test).Methods("GET")
+	router.HandleFunc("/users/{id}", userHandlers.GetUserHandler).Methods("GET")
+	router.HandleFunc("/users", userHandlers.CreateUserHandler).Methods("POST")
+	router.HandleFunc("/test", userHandlers.Test).Methods("GET")
 
 	port := ":8080"
 	fmt.Printf("Server is running on http://localhost%s\n", port)
@@ -29,4 +30,15 @@ func main() {
 
 func YourHandlerFunction(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Hello, your Go server is up and running!")
+}
+
+// CORS middleware for handling OPTIONS requests
+func CORSOptionsHandler(w http.ResponseWriter, r *http.Request) {
+	// Set the necessary headers for CORS
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+	// Respond to the preflight request
+	w.WriteHeader(http.StatusOK)
 }
