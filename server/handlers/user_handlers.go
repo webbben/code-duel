@@ -1,10 +1,13 @@
 package userHandlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
+	"firebase.google.com/go/auth"
 	"github.com/gorilla/mux"
 	"github.com/webbben/code-duel/firebase"
 	"github.com/webbben/code-duel/models"
@@ -32,22 +35,28 @@ func GetUserHandler(w http.ResponseWriter, r *http.Request) {
 // CreateUserHandler handles POST requests to create a new user
 func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
-	// Decode the incoming JSON payload into a User struct
-	var newUser models.User
-	err := json.NewDecoder(r.Body).Decode(&newUser)
+	// Decode the incoming JSON payload
+	var request models.CreateUserRequest
+	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
 		fmt.Println("error creating user!")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	if request.Email == "" || request.Username == "" || request.Password == "" {
+		fmt.Println("Error creating user: request lacking required data")
+		http.Error(w, "Error creating user: request lacking required data", http.StatusBadRequest)
+		return
+	}
 
-	var success bool
-	firebase.CreateUser(&newUser, &success)
-
-	if success == false {
+	userID, returnErr := CreateUser(&request)
+	if returnErr != "" {
+		if userID != "" {
+			fmt.Printf("\nUser document %s was still created though, and may require cleanup.", userID)
+		}
 		response := map[string]interface{}{
 			"success": false,
-			"error":   "failed to create user",
+			"error":   returnErr,
 		}
 		responseJSON, err := json.Marshal(response)
 		if err != nil {
@@ -61,6 +70,12 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// user creation succeeded; return user info back to client
+	newUser := models.User{
+		Username: request.Username,
+		Email:    request.Email,
+		ID:       userID,
+	}
 	response := map[string]interface{}{
 		"success": true,
 		"user":    newUser,
@@ -70,13 +85,52 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-
 	fmt.Printf("New User: %+v\n", newUser)
-
 	// Respond with a success message
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(responseJSON)
+}
+
+// creates the user document in firestore and adds user in firebase auth
+func CreateUser(request *models.CreateUserRequest) (userID string, returnErr string) {
+	returnErr = ""
+	userID = ""
+	ctx := context.Background()
+
+	// create user document in firestore
+	firestoreClient := firebase.GetFirestoreClient()
+	if firestoreClient == nil {
+		fmt.Printf("firestore client is null!")
+		returnErr = "firestore client is null"
+		return
+	}
+	docRef, _, err := firestoreClient.Collection("users").Add(ctx, map[string]interface{}{
+		"username": request.Username,
+		"email":    request.Email,
+	})
+	if err != nil {
+		log.Fatalf("Failed adding user: %v", err)
+		returnErr = err.Error()
+		return
+	}
+	userID = docRef.ID
+
+	// create user in firebase auth, using the same user document ID
+	authClient := firebase.GetAuthClient()
+
+	params := (&auth.UserToCreate{}).
+		Email(request.Email).
+		EmailVerified(false).
+		Password(request.Password).
+		UID(userID)
+
+	_, err = authClient.CreateUser(ctx, params)
+	if err != nil {
+		log.Fatalf("error creating user: %v\n", err)
+		returnErr = err.Error()
+	}
+	return
 }
 
 func Test(w http.ResponseWriter, r *http.Request) {

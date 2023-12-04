@@ -8,11 +8,13 @@ import (
 
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
+	"firebase.google.com/go/auth"
 	"github.com/webbben/code-duel/models"
 	"google.golang.org/api/option"
 )
 
 var firestoreClient *firestore.Client = nil
+var authClient *auth.Client = nil
 
 func init() {
 	// Use a service account
@@ -23,13 +25,17 @@ func init() {
 		log.Fatalln(err)
 	}
 
-	client, err := app.Firestore(ctx)
+	firestoreClient, err = app.Firestore(ctx)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	firestoreClient = client
-	fmt.Println("firestore init complete")
+	authClient, err = app.Auth(ctx)
+	if err != nil {
+		log.Fatalf("error getting Auth client: %v\n", err)
+	}
+
+	fmt.Println("firebase init complete")
 }
 
 func CreateUser(user *models.User, success *bool) {
@@ -52,4 +58,8 @@ func CreateUser(user *models.User, success *bool) {
 // GetFirestoreClient returns the initialized Firestore client
 func GetFirestoreClient() *firestore.Client {
 	return firestoreClient
+}
+
+func GetAuthClient() *auth.Client {
+	return authClient
 }

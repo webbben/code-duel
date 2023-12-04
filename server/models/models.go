@@ -7,6 +7,13 @@ type User struct {
 	Email    string `json:"email"`
 }
 
+// API request for creating user
+type CreateUserRequest struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
 // Problems that can be played in a match room
 type Problem struct {
 	Title       string `json:"title"`

@@ -1,0 +1,39 @@
+.lobby_main {
+    margin: auto;
+    width: 80vw;
+    max-width: 800px;
+    min-width: 300px;
+    padding-top: 50px;
+}
+
+.rooms_card {
+    text-align: left; 
+    background-color: #121212;
+    padding: 20px;
+    border-radius: 10px;
+    min-height: 50vh;
+}
+
+.room_row {
+    border-radius: 10px;
+    padding: 5px 10px;
+    background-color: #363535;
+    cursor: pointer;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #121212;
+
+    &:hover {
+        filter:brightness(1.2);
+        border-color: blue;
+        box-sizing: border-box;
+    }
+    transition: border-color 0.2s, filter 0.2s;
+}
+
+.diff_label {
+    border-radius: 10px;
+    display: flex; 
+    justify-content: center;
+    width: 50px;
+}

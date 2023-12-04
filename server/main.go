@@ -32,13 +32,10 @@ func YourHandlerFunction(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Hello, your Go server is up and running!")
 }
 
-// CORS middleware for handling OPTIONS requests
+// CORS middleware for handling OPTIONS preflight requests
 func CORSOptionsHandler(w http.ResponseWriter, r *http.Request) {
-	// Set the necessary headers for CORS
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
-	// Respond to the preflight request
 	w.WriteHeader(http.StatusOK)
 }

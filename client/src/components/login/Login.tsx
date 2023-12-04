@@ -1,6 +1,6 @@
-import { Button, FormControl, Input, InputLabel, TextField } from "@mui/material";
+import { Button, FormControl, FormLabel, Grid, Input, InputLabel, TextField, Typography, styled } from "@mui/material";
 import React, { FormEvent, useState } from "react";
-
+import { Link } from "react-router-dom";
 
 
 export default function Login() {
@@ -20,15 +20,14 @@ export default function Login() {
                 },
                 body: JSON.stringify({
                     Username: username,
-                    Email: email
+                    Email: email,
+                    Password: 'testpassword'
                 }),
             });
-      
-            console.log(response)
-            // Check if the request was successful (status code 2xx)
             if (response.ok) {
-              console.log('User created successfully!');
-              // You might want to redirect or update state after a successful user creation
+                const json = await response.json()
+                console.log('User created successfully!');
+                console.log(json);
             } else {
               console.error('Failed to create user:', response.statusText);
             }
@@ -39,12 +38,41 @@ export default function Login() {
     }
 
     return (
-        <div>
-            <form onSubmit={handleSubmit}>
-                <TextField id='username-input' onChange={(e) => setUsername(e.target.value)} />
-                <TextField id='email-input' onChange={(e) => setEmail(e.target.value)} />
-                <Button type="submit">Submit</Button>
-            </form>
+        <div style={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center'}}>        
+            <div style={{ width: '80vw', margin: 'auto', minWidth: '300px'}}>
+                <Typography variant='h4'>Login</Typography>
+                <br />
+                <form onSubmit={handleSubmit} style={{ maxWidth: '500px', margin: 'auto'}}>
+                    
+                    <Grid container>
+                        <Grid item xs={12}>
+                            <TextField 
+                            margin='normal' 
+                            fullWidth 
+                            InputProps={{ sx: { borderRadius: '20px' }}} 
+                            id='username-input' 
+                            onChange={(e) => setUsername(e.target.value)}
+                            label={'Username'} />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField 
+                            margin='normal' 
+                            fullWidth 
+                            InputProps={{ sx: { borderRadius: '20px' }}} 
+                            id='email-input' 
+                            onChange={(e) => setEmail(e.target.value)}
+                            label={'Email'} />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <div style={{ display: 'flex', justifyContent:'space-between', alignItems: 'center', marginTop: '20px' }}>
+                                <Button sx={{ textAlign: 'left'}} variant='outlined' type="submit">Submit</Button>
+                                <span>New user? <Link to='/signup'>Create account</Link></span>
+                            </div>
+                        </Grid>
+                    </Grid>
+                    
+                </form>
+            </div>
         </div>
     )
 }
