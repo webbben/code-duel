@@ -2,39 +2,56 @@ import { Button, FormControl, FormLabel, Grid, Input, InputLabel, TextField, Typ
 import React, { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { serverURL } from "../..";
+
 
 export default function Login() {
 
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
 
     async function handleSubmit(e: FormEvent) {
         e.preventDefault()
-    
-        try {
-            // Make API call to create a user
-            const response = await fetch('http://localhost:8080/users', {
+
+        if (email.length == 0 || password.length == 0) {
+            return;
+        }
+        
+        // attempt to login with the given credentials, and obtain an ID token from firebase
+        const auth = getAuth();
+        signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+            const user = userCredential.user;
+            console.log('user logged in', user);
+            return user.getIdToken();
+        })
+        // verify the token on our server too, as an extra security measure
+        .then((token) => {
+            fetch(`${serverURL}/verifyToken`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify({
-                    Username: username,
-                    Email: email,
-                    Password: 'testpassword'
-                }),
-            });
-            if (response.ok) {
-                const json = await response.json()
-                console.log('User created successfully!');
-                console.log(json);
-            } else {
-              console.error('Failed to create user:', response.statusText);
-            }
-        } catch (error) {
-            console.error('Error creating user:', error);
-        }
-    
+            })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error("Token verification failed.");
+                }
+                console.log('Token verification successful!');
+            })
+            .catch((error) => {
+                console.error('Error sending token to server', error);
+                auth.signOut();
+            })
+        })
+        .catch((error) => {
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            console.error(`${errorCode}: ${errorMessage}`);
+        });
     }
 
     return (
@@ -50,18 +67,18 @@ export default function Login() {
                             margin='normal' 
                             fullWidth 
                             InputProps={{ sx: { borderRadius: '20px' }}} 
-                            id='username-input' 
-                            onChange={(e) => setUsername(e.target.value)}
-                            label={'Username'} />
+                            id='email-input' 
+                            onChange={(e) => setEmail(e.target.value)}
+                            label={'Email'} />
                         </Grid>
                         <Grid item xs={12}>
                             <TextField 
                             margin='normal' 
                             fullWidth 
                             InputProps={{ sx: { borderRadius: '20px' }}} 
-                            id='email-input' 
-                            onChange={(e) => setEmail(e.target.value)}
-                            label={'Email'} />
+                            id='password-input' 
+                            onChange={(e) => setPassword(e.target.value)}
+                            label={'Password'} />
                         </Grid>
                         <Grid item xs={12}>
                             <div style={{ display: 'flex', justifyContent:'space-between', alignItems: 'center', marginTop: '20px' }}>

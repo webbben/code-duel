@@ -34,7 +34,6 @@ func GetUserHandler(w http.ResponseWriter, r *http.Request) {
 
 // CreateUserHandler handles POST requests to create a new user
 func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
 	// Decode the incoming JSON payload
 	var request models.CreateUserRequest
 	err := json.NewDecoder(r.Body).Decode(&request)
@@ -131,18 +130,4 @@ func CreateUser(request *models.CreateUserRequest) (userID string, returnErr str
 		returnErr = err.Error()
 	}
 	return
-}
-
-func Test(w http.ResponseWriter, r *http.Request) {
-	client := firebase.GetFirestoreClient()
-	if client == nil {
-		fmt.Println("client is null!")
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	fmt.Fprintf(w, `{"message": "Test!"}`)
-}
-
-func enableCors(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 }

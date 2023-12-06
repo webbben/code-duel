@@ -1,7 +1,8 @@
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { Button, FormControl, FormLabel, Grid, IconButton, Input, InputAdornment, InputLabel, TextField, Typography, styled } from "@mui/material";
 import React, { FormEvent, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, redirect } from "react-router-dom";
+import { serverURL } from "../..";
 
 interface validationError {
     username: number | null,
@@ -25,7 +26,7 @@ export default function Signup() {
     
         try {
             // Make API call to create a user
-            const response = await fetch('http://localhost:8080/users', {
+            const response = await fetch(`${serverURL}/users`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -40,6 +41,7 @@ export default function Signup() {
                 const json = await response.json()
                 console.log('User created successfully!');
                 console.log(json);
+                redirect('/');
             } else {
               console.error('Failed to create user:', response.statusText);
             }
@@ -109,8 +111,8 @@ export default function Signup() {
                             <Typography 
                             variant='body2' 
                             textAlign={'right'}>
-                                <span style={{ color: error.username == 1 ? 'red' : 'unset'}}>5 to 10 characters</span>
-                                <span style={{ color: error.username == 2 ? 'red' : 'unset'}}>, alphanumeric</span></Typography>
+                                <span style={{ color: error.username == 1 ? 'red' : 'unset'}}>5 to 10 characters</span>, 
+                                <span style={{ color: error.username == 2 ? 'red' : 'unset'}}> alphanumeric</span></Typography>
                         </Grid>
                         <Grid item xs={12}>
                             <TextField 
@@ -137,7 +139,7 @@ export default function Signup() {
                                     </InputAdornment>
                                 )
                             }} 
-                            id='email-input' 
+                            id='password-input' 
                             onChange={(e) => onChangePassword(e.target.value)}
                             label={'Password'} 
                             />
@@ -150,7 +152,7 @@ export default function Signup() {
                         <Grid item xs={12}>
                             <div style={{ display: 'flex', justifyContent:'space-between', alignItems: 'center', marginTop: '20px' }}>
                                 <Button sx={{ textAlign: 'left'}} variant='outlined' type="submit">Submit</Button>
-                                <span>New user? <Link to='/signup'>Create account</Link></span>
+                                <span>Already have an account? <Link to='/login'>Log in here.</Link></span>
                             </div>
                         </Grid>
                     </Grid>

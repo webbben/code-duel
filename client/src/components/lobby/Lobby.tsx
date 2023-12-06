@@ -13,7 +13,8 @@ export default function Lobby() {
             currentOccupancy: 2,
             maxOccupancy: 5,
             status: 'waiting',
-            allowSpectators: true
+            allowSpectators: true,
+            id: 'room1'
         },
         {
             name: 'X Technical Interview',
@@ -22,7 +23,8 @@ export default function Lobby() {
             currentOccupancy: 2,
             maxOccupancy: 2,
             status: 'in progress',
-            allowSpectators: false
+            allowSpectators: false,
+            id: 'room2'
         },
         {
             name: 'FFA Code Race',
@@ -31,7 +33,8 @@ export default function Lobby() {
             currentOccupancy: 3,
             maxOccupancy: 5,
             status: 'waiting',
-            allowSpectators: true
+            allowSpectators: true,
+            id: 'room3'
         }
     ]
 
@@ -47,7 +50,7 @@ export default function Lobby() {
                         {
                             rooms.map((room) => {
                                 return (
-                                    <RoomRow {...room} />
+                                    <RoomRow {...room} key={room.id} />
                                 )
                             })
                         }
