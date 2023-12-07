@@ -1,7 +1,7 @@
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { Button, FormControl, FormLabel, Grid, IconButton, Input, InputAdornment, InputLabel, TextField, Typography, styled } from "@mui/material";
+import { Button, Grid, IconButton, InputAdornment, TextField, Typography } from "@mui/material";
 import React, { FormEvent, useState } from "react";
-import { Link, redirect } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { serverURL } from "../..";
 
 interface validationError {
@@ -15,7 +15,9 @@ export default function Signup() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<validationError>({ username: null, password: null });
-    const [showPassword, setShowPassword] = useState(false)
+    const [showPassword, setShowPassword] = useState(false);
+
+    const navigate = useNavigate();
 
     async function handleSubmit(e: FormEvent) {
         e.preventDefault()
@@ -41,7 +43,7 @@ export default function Signup() {
                 const json = await response.json()
                 console.log('User created successfully!');
                 console.log(json);
-                redirect('/');
+                navigate('/');
             } else {
               console.error('Failed to create user:', response.statusText);
             }
@@ -111,8 +113,8 @@ export default function Signup() {
                             <Typography 
                             variant='body2' 
                             textAlign={'right'}>
-                                <span style={{ color: error.username == 1 ? 'red' : 'unset'}}>5 to 10 characters</span>, 
-                                <span style={{ color: error.username == 2 ? 'red' : 'unset'}}> alphanumeric</span></Typography>
+                                <span style={{ color: error.username === 1 ? 'red' : 'unset'}}>5 to 10 characters</span>, 
+                                <span style={{ color: error.username === 2 ? 'red' : 'unset'}}> alphanumeric</span></Typography>
                         </Grid>
                         <Grid item xs={12}>
                             <TextField 
@@ -146,8 +148,8 @@ export default function Signup() {
                             <Typography 
                             variant='body2' 
                             textAlign={'right'}>
-                                <span style={{ color: error.password == 1 ? 'red' : 'unset'}}>5 to 15 characters</span>
-                                , with <span style={{ color: error.password == 2 ? 'red' : 'unset'}}>at least one number or special character</span></Typography>
+                                <span style={{ color: error.password === 1 ? 'red' : 'unset'}}>5 to 15 characters</span>
+                                , with <span style={{ color: error.password === 2 ? 'red' : 'unset'}}>at least one number or special character</span></Typography>
                         </Grid>
                         <Grid item xs={12}>
                             <div style={{ display: 'flex', justifyContent:'space-between', alignItems: 'center', marginTop: '20px' }}>

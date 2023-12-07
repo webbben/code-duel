@@ -10,14 +10,22 @@ interface RoomRowProps {
     maxOccupancy: number,
     status: string,
     allowSpectators: boolean,
-    owner: string
+    owner: string,
+    selectRoom: Function,
+    isSelected: boolean,
+    id: string
 }
 
 export default function RoomRow(props: RoomRowProps) {
 
+    var classes = "room_row";
+
+    if (props.isSelected) {
+        classes += " selected_row";
+    }
     
     return (
-        <div className="room_row">
+        <div className={classes} onClick={() => props.selectRoom(props.id)}>
             <Grid container spacing={2}>
                 <Grid item xs={4}>
                 <Typography fontWeight={600} noWrap>{props.name}</Typography>

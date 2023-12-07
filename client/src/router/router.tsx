@@ -4,9 +4,15 @@ import App from "../App";
 import Lobby from "../components/lobby/Lobby";
 import Signup from "../components/login/Signup";
 
+export const routes = {
+    login: '/login',
+    signup: '/signup',
+    root: '/',
+}
+
 export const router = createBrowserRouter([
     {
-        path: '/',
+        path: routes.root,
         element: <App />,
         children: [
             {
@@ -14,17 +20,14 @@ export const router = createBrowserRouter([
                 element: <Lobby />
             },
             {
-                path: '/login',
+                path: routes.login,
                 element: <Login />
             },
             {
-                path: '/signup',
+                path: routes.signup,
                 element: <Signup />
-            },
-            {
-                path: '/rooms',
-                element: <div>rooms</div>
             },
         ]
     },
 ]);
+

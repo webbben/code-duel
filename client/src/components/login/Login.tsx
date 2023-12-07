@@ -1,9 +1,11 @@
-import { Button, FormControl, FormLabel, Grid, Input, InputLabel, TextField, Typography, styled } from "@mui/material";
+import { Button, Grid, TextField, Typography } from "@mui/material";
 import React, { FormEvent, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { serverURL } from "../..";
+import { useAppDispatch } from "../../redux/hooks";
+import { setUserInfo } from "../../redux/userInfoSlice";
 
 
 export default function Login() {
@@ -12,10 +14,14 @@ export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
+    const dispatch = useAppDispatch();
+
+    const navigate = useNavigate();
+
     async function handleSubmit(e: FormEvent) {
         e.preventDefault()
 
-        if (email.length == 0 || password.length == 0) {
+        if (email.length === 0 || password.length === 0) {
             return;
         }
         
@@ -36,11 +42,20 @@ export default function Login() {
                     'Authorization': `Bearer ${token}`,
                 },
             })
-            .then((response) => {
+            .then(async (response) => {
                 if (!response.ok) {
                     throw new Error("Token verification failed.");
                 }
+                const json = await response.json();
                 console.log('Token verification successful!');
+                console.log(json);
+                dispatch(setUserInfo({
+                    username: "user123",
+                    email: email,
+                    idToken: token,
+                    loggedIn: true
+                }));
+                navigate('/');
             })
             .catch((error) => {
                 console.error('Error sending token to server', error);

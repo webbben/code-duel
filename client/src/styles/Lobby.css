@@ -31,6 +31,12 @@
     transition: border-color 0.2s, filter 0.2s;
 }
 
+.selected_row {
+    border-color: blue;
+    filter: brightness(1.1);
+    background-color: #2a2a58;
+}
+
 .diff_label {
     border-radius: 10px;
     display: flex; 

@@ -122,7 +122,8 @@ func CreateUser(request *models.CreateUserRequest) (userID string, returnErr str
 		Email(request.Email).
 		EmailVerified(false).
 		Password(request.Password).
-		UID(userID)
+		UID(userID).
+		DisplayName(request.Username)
 
 	_, err = authClient.CreateUser(ctx, params)
 	if err != nil {
