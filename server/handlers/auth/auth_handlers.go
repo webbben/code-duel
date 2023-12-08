@@ -16,7 +16,7 @@ type Claims struct {
 	DisplayName string
 }
 
-var UserIDKey string = "userID"
+var ClaimsKey string = "userClaims"
 
 // Effectively a login handler; verifies a token and returns the user data in the response
 func VerifyTokenHandler(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +34,7 @@ func VerifyTokenHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// extract user info from claims and write to response
-	claims, err := extractTokenClaims(claimsMap)
+	claims, err := ExtractTokenClaims(claimsMap)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -72,7 +72,7 @@ func ExtractTokenFromHeader(authHeader string) (token string, err error) {
 }
 
 // extracts the user values from a token's claims
-func extractTokenClaims(claimsMap map[string]interface{}) (claims Claims, err error) {
+func ExtractTokenClaims(claimsMap map[string]interface{}) (claims Claims, err error) {
 	userID, ok := claimsMap["user_id"].(string)
 	if !ok {
 		err = errors.New("failed to extract userID from token claims")
@@ -97,12 +97,12 @@ func extractTokenClaims(claimsMap map[string]interface{}) (claims Claims, err er
 }
 
 // Extract the user ID from the request context
-func GetUserIDFromContext(r *http.Request) string {
-	userID, ok := r.Context().Value(UserIDKey).(string)
+func GetUserClaimsFromContext(r *http.Request) (claims Claims, err error) {
+	claims, ok := r.Context().Value(ClaimsKey).(Claims)
 	if !ok {
-		return "" // or handle the absence of the key appropriately
+		err = errors.New("Failed to retrieve user claims from context")
 	}
-	return userID
+	return
 }
 
 // Verifies a given token and returns the associated claims map

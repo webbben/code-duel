@@ -2,13 +2,17 @@ import { Button, Grid, Stack, Typography } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import RoomRow from "./RoomRow";
 import '../../styles/Lobby.css'
+import { useAppSelector } from "../../redux/hooks";
+import { RootState } from "../../redux/store";
+import CreateRoomDialog from "./CreateRoomDialog";
+import { getRoomList } from "../../dataProvider";
 
 interface room {
-    name: string,
+    title: string,
     owner: string,
     difficulty: number,
-    currentOccupancy: number,
-    maxOccupancy: number,
+    curcapacity: number,
+    maxcapacity: number,
     status: string,
     allowSpectators: boolean,
     id: string
@@ -16,41 +20,45 @@ interface room {
 
 const exampleRooms: room[] = [
     {
-        name: 'Collab room',
+        title: 'Collab room',
         owner: 'newbiecoder4',
         difficulty: 1,
-        currentOccupancy: 2,
-        maxOccupancy: 5,
+        curcapacity: 2,
+        maxcapacity: 5,
         status: 'waiting',
         allowSpectators: true,
         id: 'room1'
     },
     {
-        name: 'X Technical Interview',
+        title: 'X Technical Interview',
         owner: 'elonmusk',
         difficulty: 3,
-        currentOccupancy: 2,
-        maxOccupancy: 2,
+        curcapacity: 2,
+        maxcapacity: 2,
         status: 'in progress',
         allowSpectators: false,
         id: 'room2'
     },
     {
-        name: 'FFA Code Race',
+        title: 'FFA Code Race',
         owner: 'leetcoder420',
         difficulty: 2,
-        currentOccupancy: 3,
-        maxOccupancy: 5,
+        curcapacity: 3,
+        maxcapacity: 5,
         status: 'waiting',
         allowSpectators: true,
         id: 'room3'
     }
-]
+];
+
+
 
 export default function Lobby() {
 
     const [rooms, setRooms] = useState<room[]>([]);
     const [selectedRoom, setSelectedRoom] = useState('');
+    const loggedIn = useAppSelector((state: RootState) => state.userInfo.loggedIn);
+    const [createRoomDialogOpen, setCreateRoomDialogOpen] = useState(false);
 
     function toggleSelectRoom(roomID: string) {
         if (selectedRoom === roomID) {
@@ -61,8 +69,15 @@ export default function Lobby() {
         }
     }
 
+    function startCreateRoomDialog() {
+        // start create room workflow - pop up form
+        setCreateRoomDialogOpen(true);
+        // the pop up UI component will take it from there as far as making the API request
+    }
+
     useEffect(() => {
-        setRooms(exampleRooms);
+        getRoomList(setRooms);
+        //setRooms(exampleRooms);
     }, []);
 
     return (
@@ -89,12 +104,20 @@ export default function Lobby() {
                 </Grid>
                 <Grid item xs={3}>
                     <Stack spacing={2} marginLeft={2}>
-                    <Button variant="outlined" disabled={selectedRoom === ''}>Join room</Button>
-                    <Button variant="outlined" disabled={selectedRoom === ''}>Spectate</Button>
-                    <Button variant='outlined'>Create room</Button>
+                    <Button 
+                    variant="outlined" 
+                    disabled={selectedRoom === '' || !loggedIn}>Join room</Button>
+                    <Button 
+                    variant="outlined" 
+                    disabled={selectedRoom === '' || !loggedIn}>Spectate</Button>
+                    <Button 
+                    variant='outlined' 
+                    disabled={!loggedIn}
+                    onClick={() => startCreateRoomDialog()}>Create room</Button>
                     </Stack>
                 </Grid>
             </Grid>
+            <CreateRoomDialog open={createRoomDialogOpen} handleClose={() => setCreateRoomDialogOpen(false)} />
         </div>
     )
 }

@@ -16,11 +16,12 @@ type CreateUserRequest struct {
 
 // API request for creating room
 type CreateRoomRequest struct {
-	Owner       string `json:"owner"`       // owner of the room is the user that created it
-	Title       string `json:"title"`       // title of the room
-	MaxCapacity int    `json:"maxcapacity"` // limit to number of users allowed in room (up to 5)
-	Difficulty  int    `json:"difficulty"`  // difficulty for problems - 1=easy, 2=med, 3=hard
-	GameMode    int    `json:"gamemode"`    // game mode - either vs or co-op
+	Title           string `json:"title"`           // title of the room
+	MaxCapacity     int    `json:"maxcapacity"`     // limit to number of users allowed in room (up to 5)
+	Difficulty      int    `json:"difficulty"`      // difficulty for problems - 1=easy, 2=med, 3=hard
+	ReqPassword     bool   `json:"reqpassword"`     // whether or not a password is required for this room
+	Password        string `json:"password"`        // password for this room (if applicable)
+	AllowSpectators bool   `json:"allowspectators"` // whether or not spectators are allowed
 }
 
 type Room struct {

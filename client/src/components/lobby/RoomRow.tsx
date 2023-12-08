@@ -4,10 +4,10 @@ import React from "react";
 import DiffLabel from "./DiffLabel";
 
 interface RoomRowProps {
-    name: string,
+    title: string,
     difficulty: number,
-    currentOccupancy: number,
-    maxOccupancy: number,
+    curcapacity: number,
+    maxcapacity: number,
     status: string,
     allowSpectators: boolean,
     owner: string,
@@ -28,13 +28,13 @@ export default function RoomRow(props: RoomRowProps) {
         <div className={classes} onClick={() => props.selectRoom(props.id)}>
             <Grid container spacing={2}>
                 <Grid item xs={4}>
-                <Typography fontWeight={600} noWrap>{props.name}</Typography>
+                <Typography fontWeight={600} noWrap>{props.title}</Typography>
                 </Grid>
                 <Grid item xs={3}>
                 <Typography noWrap>{props.owner}</Typography>
                 </Grid>
                 <Grid item xs={1}>
-                <Typography>{props.currentOccupancy}/{props.maxOccupancy}</Typography>
+                <Typography>{props.curcapacity}/{props.maxcapacity}</Typography>
                 </Grid>
                 <Grid item xs={2}>
                     <DiffLabel difficulty={props.difficulty}/>

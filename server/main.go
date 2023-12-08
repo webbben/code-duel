@@ -19,14 +19,13 @@ import (
 func main() {
 	_ = firebase.GetFirestoreClient()
 	router := mux.NewRouter()
-	protectedRouter := router.PathPrefix("/protected/").Subrouter()
+	protectedRouter := router.PathPrefix("/protected").Subrouter()
 
 	// middleware
 	// CORS handling. Note: you must add OPTIONS method to API endpoint for this middleware to run!
 	router.Use(middleware.CorsMiddleware)
 	// add authentication middleware to protected APIs too
-	protectedRouter.Use(middleware.CorsMiddleware)
-	protectedRouter.Use(middleware.AuthenticationMiddleware)
+	protectedRouter.Use(middleware.CorsMiddleware, middleware.AuthenticationMiddleware)
 
 	// TODO: serve static files for react app here?
 	router.HandleFunc("/", YourHandlerFunction).Methods("GET")
@@ -39,8 +38,9 @@ func main() {
 	router.HandleFunc("/users", userHandlers.CreateUserHandler).Methods("POST", "OPTIONS")
 
 	// room API
-	protectedRouter.HandleFunc("rooms", roomHandlers.CreateRoomHandler).Methods("POST", "OPTIONS")
-	protectedRouter.HandleFunc("rooms/{id}/join", roomHandlers.JoinRoomHandler).Methods("POST", "OPTIONS") // TODO
+	protectedRouter.HandleFunc("/rooms", roomHandlers.CreateRoomHandler).Methods("POST", "OPTIONS")
+	router.HandleFunc("/rooms", roomHandlers.GetRoomListHandler).Methods("GET", "OPTIONS")
+	protectedRouter.HandleFunc("/rooms/{id}/join", roomHandlers.JoinRoomHandler).Methods("POST", "OPTIONS") // TODO
 
 	port := ":8080"
 	fmt.Printf("Server is running on http://localhost%s\n", port)

@@ -2,13 +2,17 @@ package middleware
 
 import (
 	"context"
+	"log"
 	"net/http"
 
 	authHandlers "github.com/webbben/code-duel/handlers/auth"
 )
 
+var debug = false
+
 func CorsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println("cors middleware")
 		// Set CORS headers for all requests
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
@@ -29,6 +33,7 @@ func CorsMiddleware(next http.Handler) http.Handler {
 func AuthenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Extract the token from the Authorization header
+		log.Println("auth middleware")
 		tokenString, err := authHandlers.ExtractTokenFromHeader(r.Header.Get("Authorization"))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
@@ -36,14 +41,19 @@ func AuthenticationMiddleware(next http.Handler) http.Handler {
 		}
 
 		// Validate and extract claims from the token
-		claims, err := authHandlers.VerifyTokenAndGetClaims(tokenString)
+		claimsMap, err := authHandlers.VerifyTokenAndGetClaims(tokenString)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+		claims, err := authHandlers.ExtractTokenClaims(claimsMap)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
 
-		// Add the user ID to the request context
-		ctx := context.WithValue(r.Context(), authHandlers.UserIDKey, claims["sub"].(string))
+		// Add the user claims to the request context
+		ctx := context.WithValue(r.Context(), authHandlers.ClaimsKey, claims)
 		r = r.WithContext(ctx)
 
 		// Call the next handler in the chain

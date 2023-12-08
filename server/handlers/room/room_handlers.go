@@ -41,26 +41,23 @@ func CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
 
 	// I don't think I need to lock here - there shouldn't be an issue with multiple threads making different rooms at the same time... right?
 
-	userID := authHandlers.GetUserIDFromContext(r)
-	if userID == "" {
-		fmt.Println("couldn't find userID in context!") // TODO remove
-		http.Error(w, "Unauthorized: no userID found in request context", http.StatusUnauthorized)
+	claims, err := authHandlers.GetUserClaimsFromContext(r)
+	if err != nil {
+		fmt.Println(err.Error()) // TODO remove
+		http.Error(w, fmt.Sprintf("Unauthorized: %s", err.Error()), http.StatusUnauthorized)
 		return
 	}
+	username := claims.DisplayName
 
 	var request models.CreateRoomRequest
-	err := json.NewDecoder(r.Body).Decode(&request)
+	err = json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if userID != request.Owner {
-		http.Error(w, "Unauthorized: requesting userID isn't the owner of the room", http.StatusUnauthorized)
-		return
-	}
 
 	// create new room object with the provided params, and set the ordering user as the owner
-	roomID, err := CreateRoom(&request)
+	roomID, err := CreateRoom(&request, username)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -82,7 +79,7 @@ func CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(responseJSON)
 }
 
-func CreateRoom(request *models.CreateRoomRequest) (roomID string, err error) {
+func CreateRoom(request *models.CreateRoomRequest, username string) (roomID string, err error) {
 	ctx := context.Background()
 
 	// create user document in firestore
@@ -93,11 +90,14 @@ func CreateRoom(request *models.CreateRoomRequest) (roomID string, err error) {
 		return
 	}
 	docRef, _, err := firestoreClient.Collection("rooms").Add(ctx, map[string]interface{}{
-		"owner":       request.Owner,
+		"owner":       username,
 		"title":       request.Title,
 		"difficulty":  request.Difficulty,
-		"gamemode":    request.GameMode,
 		"maxcapacity": request.MaxCapacity,
+		"curcapacity": 0,
+		"status":      "waiting",
+		"reqpassword": request.ReqPassword,
+		"password":    request.Password,
 	})
 	if err != nil {
 		log.Fatalf("Failed creating room: %v", err)
@@ -114,4 +114,40 @@ func DeleteRoomHandler(w http.ResponseWriter, r *http.Request) {
 
 	// if the user isn't the same - return failure unauthorized response
 	// if the user is, delete the room - return success response
+}
+
+func GetRoomListHandler(w http.ResponseWriter, r *http.Request) {
+	firestoreClient := firebase.GetFirestoreClient()
+	ctx := context.Background()
+
+	collectionRef := firestoreClient.Collection("rooms")
+	if collectionRef == nil {
+
+	}
+	rooms, err := collectionRef.Documents(ctx).GetAll()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var output []map[string]interface{}
+	for _, roomSnapshot := range rooms {
+		id := roomSnapshot.Ref.ID
+		data := roomSnapshot.Data()
+		data["id"] = id // add the doc ref ID too
+		output = append(output, data)
+	}
+
+	response := map[string]interface{}{
+		"success": true,
+		"rooms":   output,
+	}
+	responseJSON, err := json.Marshal(response)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(responseJSON)
 }

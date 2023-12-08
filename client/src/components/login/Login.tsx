@@ -50,7 +50,7 @@ export default function Login() {
                 console.log('Token verification successful!');
                 console.log(json);
                 dispatch(setUserInfo({
-                    username: "user123",
+                    username: json.username,
                     email: email,
                     idToken: token,
                     loggedIn: true
