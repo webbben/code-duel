@@ -6,6 +6,8 @@ import { useAppSelector } from "../../redux/hooks";
 import { RootState } from "../../redux/store";
 import CreateRoomDialog from "./CreateRoomDialog";
 import { getRoomList } from "../../dataProvider";
+import { useNavigate } from "react-router-dom";
+import { routes } from "../../router/router";
 
 interface room {
     title: string,
@@ -60,6 +62,8 @@ export default function Lobby() {
     const loggedIn = useAppSelector((state: RootState) => state.userInfo.loggedIn);
     const [createRoomDialogOpen, setCreateRoomDialogOpen] = useState(false);
 
+    const navigate = useNavigate();
+
     function toggleSelectRoom(roomID: string) {
         if (selectedRoom === roomID) {
             setSelectedRoom('');
@@ -67,6 +71,14 @@ export default function Lobby() {
         else {
             setSelectedRoom(roomID);
         }
+    }
+
+    function handleJoinRoom() {
+        if (selectedRoom === '') {
+            return;
+        }
+        // TODO: add password entry workflow
+        navigate(`${routes.room}/${selectedRoom}`);
     }
 
     function startCreateRoomDialog() {
@@ -106,7 +118,8 @@ export default function Lobby() {
                     <Stack spacing={2} marginLeft={2}>
                     <Button 
                     variant="outlined" 
-                    disabled={selectedRoom === '' || !loggedIn}>Join room</Button>
+                    disabled={selectedRoom === '' || !loggedIn}
+                    onClick={() => handleJoinRoom()}>Join room</Button>
                     <Button 
                     variant="outlined" 
                     disabled={selectedRoom === '' || !loggedIn}>Spectate</Button>

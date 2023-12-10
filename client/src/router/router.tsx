@@ -3,11 +3,13 @@ import Login from "../components/login/Login";
 import App from "../App";
 import Lobby from "../components/lobby/Lobby";
 import Signup from "../components/login/Signup";
+import Room, { loader as roomLoader } from "../components/room/Room";
 
 export const routes = {
     login: '/login',
     signup: '/signup',
     root: '/',
+    room: '/room'
 }
 
 export const router = createBrowserRouter([
@@ -27,6 +29,11 @@ export const router = createBrowserRouter([
                 path: routes.signup,
                 element: <Signup />
             },
+            {
+                path: `${routes.room}/:roomID`,
+                element: <Room />,
+                loader: roomLoader
+            }
         ]
     },
 ]);
