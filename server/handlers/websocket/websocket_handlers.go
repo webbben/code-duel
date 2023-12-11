@@ -83,6 +83,7 @@ func HandleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 		switch receivedMessage.Type {
 		case "message":
 			// Broadcast the message to all connected clients in the same room
+			log.Printf("message from %s: %s", receivedMessage.Sender, receivedMessage.Content)
 			broadcastMessage(receivedMessage, conn)
 			// We don't save the message history in firebase, just to preserve storage space
 		}
