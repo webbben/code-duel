@@ -2,7 +2,8 @@ import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { Button, Grid, IconButton, InputAdornment, TextField, Typography } from "@mui/material";
 import React, { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { serverURL } from "../..";
+import { serverURL } from "../../dataProvider";
+
 
 interface validationError {
     username: number | null,

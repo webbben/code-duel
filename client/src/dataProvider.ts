@@ -1,4 +1,5 @@
-import { serverURL } from ".";
+/** URL where our server API endpoints can be accessed */
+export const serverURL = 'http://localhost:8080';
 
 export async function getRoomList(setRooms: Function) {
 
@@ -22,4 +23,32 @@ export async function getRoomList(setRooms: Function) {
         console.error('Error loading rooms:', error);
     }
 
+}
+
+export async function getRoomData(roomID: string) {
+    const response = await fetch(`${serverURL}/rooms/${roomID}`, {
+        method: 'GET'
+    });
+    if (!response.ok) {
+        console.error(`failed to load data for room ${roomID}`, response.statusText);
+        return null;
+    }
+    const json = await response.json();
+    console.log(`Loaded room ${roomID}`, json);
+    return json.room;
+}
+
+export async function verifyToken(token: string): Promise<boolean> {
+    const response = await fetch(`${serverURL}/verifyToken`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        console.error('failed to verify ID token', response.statusText);
+        return false;
+    }
+    return true;
 }

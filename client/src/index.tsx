@@ -31,9 +31,6 @@ const app = initializeApp(firebaseConfig);
 //const analytics = getAnalytics(app);
 console.log(`Initialized firebase app ${app.name}`);
 
-/** URL where our server API endpoints can be accessed */
-export const serverURL = 'http://localhost:8080';
-
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );

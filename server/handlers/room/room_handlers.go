@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/webbben/code-duel/firebase"
 	authHandlers "github.com/webbben/code-duel/handlers/auth"
 	"github.com/webbben/code-duel/models"
@@ -141,6 +142,37 @@ func GetRoomListHandler(w http.ResponseWriter, r *http.Request) {
 	response := map[string]interface{}{
 		"success": true,
 		"rooms":   output,
+	}
+	responseJSON, err := json.Marshal(response)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(responseJSON)
+}
+
+func GetRoomHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	roomID := vars["id"]
+	if roomID == "" {
+		http.Error(w, "No room ID found in request vars", http.StatusBadRequest)
+		return
+	}
+	firestoreClient := firebase.GetFirestoreClient()
+	ctx := context.Background()
+
+	snapshot, err := firestoreClient.Collection("rooms").Doc(roomID).Get(ctx)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	roomData := snapshot.Data()
+
+	response := map[string]interface{}{
+		"success": true,
+		"room":    roomData,
 	}
 	responseJSON, err := json.Marshal(response)
 	if err != nil {

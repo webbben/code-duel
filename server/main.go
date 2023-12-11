@@ -11,6 +11,7 @@ import (
 	authHandlers "github.com/webbben/code-duel/handlers/auth"
 	roomHandlers "github.com/webbben/code-duel/handlers/room"
 	userHandlers "github.com/webbben/code-duel/handlers/user"
+	"github.com/webbben/code-duel/handlers/websocket"
 	"github.com/webbben/code-duel/middleware"
 )
 
@@ -40,7 +41,11 @@ func main() {
 	// room API
 	protectedRouter.HandleFunc("/rooms", roomHandlers.CreateRoomHandler).Methods("POST", "OPTIONS")
 	router.HandleFunc("/rooms", roomHandlers.GetRoomListHandler).Methods("GET", "OPTIONS")
+	router.HandleFunc("/rooms/{id}", roomHandlers.GetRoomHandler).Methods("GET", "OPTIONS")
 	protectedRouter.HandleFunc("/rooms/{id}/join", roomHandlers.JoinRoomHandler).Methods("POST", "OPTIONS") // TODO
+
+	// websocket communication
+	router.HandleFunc("/ws", websocket.HandleWebSocketConnection)
 
 	port := ":8080"
 	fmt.Printf("Server is running on http://localhost%s\n", port)

@@ -1,10 +1,10 @@
 import { Button, ButtonGroup, Dialog, DialogActions, DialogContent, DialogTitle, Grid, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from "@mui/material";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { serverURL } from "../..";
 import { HelpOutline } from "@mui/icons-material";
 import { useAppSelector } from "../../redux/hooks";
 import { RootState } from "../../redux/store";
+import { serverURL } from "../../dataProvider";
 
 interface CreateRoomDialogProps {
     open: boolean,

@@ -3,9 +3,9 @@ import React, { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { serverURL } from "../..";
 import { useAppDispatch } from "../../redux/hooks";
 import { setUserInfo } from "../../redux/userInfoSlice";
+import { serverURL } from "../../dataProvider";
 
 
 export default function Login() {
