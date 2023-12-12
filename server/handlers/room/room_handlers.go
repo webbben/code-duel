@@ -139,7 +139,8 @@ func GetRoomListHandler(w http.ResponseWriter, r *http.Request) {
 
 	collectionRef := firestoreClient.Collection("rooms")
 	if collectionRef == nil {
-
+		http.Error(w, "failed to load rooms collection", http.StatusInternalServerError)
+		return
 	}
 	rooms, err := collectionRef.Documents(ctx).GetAll()
 	if err != nil {
