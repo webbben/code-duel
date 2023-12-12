@@ -25,3 +25,12 @@ func GetMappedMutex(key string, mutexMap *sync.Map) *sync.Mutex {
 	mutex, _ := mutexMap.LoadOrStore(key, &sync.Mutex{})
 	return mutex.(*sync.Mutex)
 }
+
+func RemoveElementFromArray(element string, array []string) []string {
+	for index, value := range array {
+		if value == element {
+			return append(array[:index], array[index+1:]...)
+		}
+	}
+	return array
+}

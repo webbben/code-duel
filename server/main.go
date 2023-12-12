@@ -43,6 +43,7 @@ func main() {
 	router.HandleFunc("/rooms", roomHandlers.GetRoomListHandler).Methods("GET", "OPTIONS")
 	router.HandleFunc("/rooms/{id}", roomHandlers.GetRoomHandler).Methods("GET", "OPTIONS")
 	protectedRouter.HandleFunc("/rooms/{id}/join", roomHandlers.JoinRoomHandler).Methods("POST", "OPTIONS")
+	protectedRouter.HandleFunc("/rooms/{id}/leave", roomHandlers.LeaveRoomHandler).Methods("POST", "OPTIONS")
 
 	// websocket communication
 	router.HandleFunc("/ws", websocket.HandleWebSocketConnection)

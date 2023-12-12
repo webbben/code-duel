@@ -68,3 +68,19 @@ export async function joinRoom(roomID: string, token: string): Promise<boolean> 
     console.log(`successfully joined room ${roomID}`);
     return true;
 }
+
+export async function leaveRoom(roomID: string, token: string): Promise<boolean> {
+    const response = await fetch(`${serverURL}/protected/rooms/${roomID}/leave`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        }
+    });
+    if (!response.ok) {
+        console.error(`failed to leave room ${roomID}`, response.statusText);
+        return false;
+    }
+    console.log(`successfully left room ${roomID}`);
+    return true;
+}

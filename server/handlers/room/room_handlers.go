@@ -24,62 +24,39 @@ var (
 )
 
 func JoinRoomHandler(w http.ResponseWriter, r *http.Request) {
+	JoinOrLeaveRoomHandler(w, r, true)
+}
+
+func LeaveRoomHandler(w http.ResponseWriter, r *http.Request) {
+	JoinOrLeaveRoomHandler(w, r, false)
+}
+
+// combined the code for joining and leaving rooms since the logic is nearly the same
+func JoinOrLeaveRoomHandler(w http.ResponseWriter, r *http.Request, join bool) {
 	vars := mux.Vars(r)
 	roomID := vars["id"]
-
 	roomMutex := general.GetMappedMutex(roomID, &roomMutexes)
 	roomMutex.Lock()
 	defer roomMutex.Unlock()
 
-	roomData := loadRoomData(roomID)
-	if roomData == nil {
-		http.Error(w, fmt.Sprintf("Failed to join room: failed to fetch data for room %s", roomID), http.StatusBadRequest)
-		return
-	}
-
-	// TODO: check if the room requires a password - if it does, verify the password
-
-	// check if the room is full - if it is, return with a failure
-	if len(roomData.Users) >= roomData.MaxCapacity {
-		http.Error(w, "Room is already full", http.StatusForbidden)
-		return
-	}
-
-	// add user to room
 	claims, err := authHandlers.GetUserClaimsFromContext(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
-	err = addUserToRoom(claims.DisplayName, roomID)
+	err = addOrRemoveUser(claims.DisplayName, roomID, join)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
 
-	// return success response
 	response := map[string]interface{}{
 		"success": true,
 	}
 	general.WriteResponse(w, response)
 }
 
-func LeaveRoomHandler(w http.ResponseWriter, r *http.Request) {
-	// lock to handle concurrency, defer unlock
-
-	// check if user is the owner of the room - if so, delete the room
-
-	// check if user is in room - if so, remove the user and decrement the room's current occupancy
-
-	// check if there are any other users left in the room - if not, delete the room
-
-	// return success response
-}
-
 func CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
-
-	// I don't think I need to lock here - there shouldn't be an issue with multiple threads making different rooms at the same time... right?
-
 	claims, err := authHandlers.GetUserClaimsFromContext(r)
 	if err != nil {
 		fmt.Println(err.Error()) // TODO remove
@@ -230,7 +207,8 @@ func loadRoomData(roomID string) *models.Room {
 	return &roomData
 }
 
-func addUserToRoom(username string, roomID string) error {
+// adds or removes a user from a room. code is combined since logic is similar
+func addOrRemoveUser(username string, roomID string, add bool) error {
 	firestoreClient := firebase.GetFirestoreClient()
 	ctx := context.Background()
 	// Reference to the room document
@@ -243,16 +221,35 @@ func addUserToRoom(username string, roomID string) error {
 			return err
 		}
 		var room models.Room
-		if err := doc.DataTo(&room); err != nil {
+		err = doc.DataTo(&room)
+		if err != nil {
 			return err
 		}
+		if add {
+			if len(room.Users) >= room.MaxCapacity {
+				return errors.New("Add user: room is already full.")
+			}
+		} else {
+			// no users in room, so do nothing
+			if len(room.Users) == 0 {
+				return nil
+			}
+		}
 
-		// user is already in the room, so do nothing
-		if slices.Contains(room.Users, username) {
+		// trying to add user but they're already in the room, so do nothing
+		if add && slices.Contains(room.Users, username) {
+			return nil
+		}
+		// trying to remove user but they're not in room, so do nothing
+		if !add && !slices.Contains(room.Users, username) {
 			return nil
 		}
 
-		room.Users = append(room.Users, username)
+		if add {
+			room.Users = append(room.Users, username)
+		} else {
+			room.Users = general.RemoveElementFromArray(username, room.Users)
+		}
 		// Update the document in Firestore
 		err = tx.Update(roomRef, []firestore.Update{
 			{Path: "Users", Value: room.Users},

@@ -1,12 +1,12 @@
 import { Alert, Button, Snackbar } from "@mui/material";
 import React from "react";
-import { Link, Params, useLoaderData } from "react-router-dom";
+import { Link, Params, useLoaderData, useNavigate } from "react-router-dom";
 import GameSettings from "./GameSettings";
 import RoomMembers from "./RoomMembers";
 import ChatPane from "./ChatPane";
 import { useAppSelector } from "../../redux/hooks";
 import { RootState } from "../../redux/store";
-import { getRoomData } from "../../dataProvider";
+import { getRoomData, leaveRoom } from "../../dataProvider";
 import { WebSocketProvider } from "../WebSocketContext";
 import { routes } from "../../router/router";
 import { RoomData } from "../lobby/Lobby";
@@ -35,6 +35,21 @@ export default function Room() {
     const roomData = useLoaderData() as RoomData;
     const username = useAppSelector((state: RootState) => state.userInfo.username);
     const loggedIn = useAppSelector((state: RootState) => state.userInfo.loggedIn);
+    const idToken = useAppSelector((state: RootState) => state.userInfo.idToken);
+    const navigate = useNavigate();
+
+    async function handleLeaveRoom() {
+        if (!roomData.id || !idToken) {
+            return;
+        }
+        const success = await leaveRoom(roomData.id, idToken);
+        if (!success) {
+            console.log("failed to leave room");
+            // TODO show visual feedback
+            return;
+        }
+        navigate(routes.root);
+    }
     
     return (
         <WebSocketProvider roomID={roomData.id}>
@@ -48,7 +63,7 @@ export default function Room() {
                     users={roomData.Users} 
                     maxCapacity={roomData.MaxCapacity} />
                     <div style={{ height: '40px', textAlign: 'left'}}>
-                        <Button variant='outlined'>Leave Room</Button>
+                        <Button variant='outlined' onClick={() => handleLeaveRoom()}>Leave Room</Button>
                     </div>
                 </div>
                 <div className="room_pane">
