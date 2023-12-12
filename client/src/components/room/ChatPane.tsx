@@ -1,117 +1,84 @@
 import { ArrowUpward } from "@mui/icons-material";
 import { IconButton, InputAdornment, TextField } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import { useAppSelector } from "../../redux/hooks";
-import { RootState } from "../../redux/store";
-
-interface ChatMessage {
-    sender: string,
-    message: string,
-    timestamp: number
-}
+import ChatMessage from "./ChatMessage";
+import { Message, useWebSocket } from "../WebSocketContext";
 
 interface ChatPaneProps {
-    roomID: string,
+    username?: string,
 }
 
 export default function ChatPane(props: ChatPaneProps) {
 
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
-    const [socket, setSocket] = useState<WebSocket | null>(null);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [messageInput, setMessageInput] = useState('');
+    const { sendMessage, handleMessage } = useWebSocket();
 
-    const username = useAppSelector((state: RootState) => state.userInfo.username);
-    const loggedIn = useAppSelector((state: RootState) => state.userInfo.loggedIn);
-
-    function addMessage(chatMsg: ChatMessage) {
+    function addMessage(chatMsg: Message) {
         setMessages(prevMessages => [...prevMessages, {...chatMsg}]);
     }
 
-    function sendMessage() {
-        if (!socket || messageInput.trim() === '') {
+    function sendChatMessage() {
+        if (messageInput.trim() === '') {
             return;
         }
-        if (!username) {
+        if (!props.username) {
             return;
         }
+        // broadcast over websocket
+        sendMessage(messageInput, props.username);
 
+        // handle local state for messages
         const timestamp = Date.now();
-
-        const message = {
-            type: "message",
-            content: messageInput,
-            room: props.roomID,
-            sender: username,
-            timestamp: timestamp
-        }
-        socket.send(JSON.stringify(message));
         addMessage({
-            sender: username,
-            message: messageInput,
+            sender: props.username,
+            content: messageInput,
             timestamp: timestamp
         });
         setMessageInput('');
     }
 
     useEffect(() => {
-        if (!props.roomID) {
-            console.warn('no room id; aborting websocket connection');
-            return;
-        }
-        if (!loggedIn) {
-            console.warn('user not logged in; aborting websocket connection');
-            return;
-        }
-        console.log('connecting to websocket');
-
-        const socket = new WebSocket(`ws://localhost:8080/ws?room=${props.roomID}`);
-        setSocket(socket);
-
-        // Add event listeners for WebSocket events
-        socket.addEventListener('open', () => {
-        console.log('WebSocket connection opened');
-        });
-
-        socket.addEventListener('message', (event) => {
-            const receivedMessage = JSON.parse(event.data);
-            const chatMsg: ChatMessage = {
-                sender: receivedMessage.sender,
-                message: receivedMessage.content,
-                timestamp: receivedMessage.timestamp
-            };
-            console.log('Received message:', receivedMessage, chatMsg);
+        const unsubscribe = handleMessage((chatMsg: Message) => {
+            console.log(`received message from ${chatMsg.sender}`);
             addMessage(chatMsg);
         });
 
-        socket.addEventListener('close', () => {
-            console.log('WebSocket connection closed');
-        });
-
-        // Cleanup function to close the WebSocket when the component unmounts
         return () => {
-            console.log('Component unmounted, closing WebSocket connection');
-            socket.close();
-        };
-    }, [props.roomID]);
+            unsubscribe();
+        }
+    }, []);
 
     return (
         <div className="room_paneCard" style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column'}}>
             <div className="room_chatBox">
-                { messages.map((msg: ChatMessage) => {
+                { messages.map((msg: Message, i) => {
+                    var lastSender = undefined;
+                    var lastTimestamp = undefined;
+                    if (i > 0) {
+                        lastSender = messages[i-1].sender;
+                        lastTimestamp = messages[i-1].timestamp;
+                    }
                     return (
-                        <p key={msg.timestamp}>{`(${msg.sender}) ${msg.message}`}</p>
+                        <ChatMessage
+                        key={msg.timestamp}
+                        {...msg}
+                        lastSender={lastSender}
+                        lastTimestamp={lastTimestamp}
+                        username={props.username} />
                     );
                 }) }
             </div>
             <TextField
-            margin='normal' 
+            margin='normal'
+            value={messageInput}
             fullWidth 
             onChange={(e) => setMessageInput(e.target.value)}
             InputProps={{ 
                 sx: { borderRadius: '20px' },
                 endAdornment: (
                     <InputAdornment position="end">
-                        <IconButton onClick={() => sendMessage()}>
+                        <IconButton onClick={() => sendChatMessage()}>
                             <ArrowUpward />
                         </IconButton>
                     </InputAdornment>

@@ -19,3 +19,7 @@
     flex: 1 1 auto;
     margin-bottom: 20px;
 }
+
+.room_chatMessage {
+    text-align: left;
+}

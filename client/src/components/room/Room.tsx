@@ -1,12 +1,13 @@
-import { Button, Divider, Grid, Typography } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import { Button } from "@mui/material";
+import React from "react";
 import { Params, useLoaderData } from "react-router-dom";
 import GameSettings from "./GameSettings";
 import RoomMembers from "./RoomMembers";
 import ChatPane from "./ChatPane";
 import { useAppSelector } from "../../redux/hooks";
 import { RootState } from "../../redux/store";
-import { getRoomData, serverURL, verifyToken } from "../../dataProvider";
+import { getRoomData } from "../../dataProvider";
+import { WebSocketProvider } from "../WebSocketContext";
 
 
 interface Room {
@@ -44,19 +45,24 @@ export async function loader({ params }: { params: Params<"roomID"> }) {
 export default function Room() {
 
     const roomData = useLoaderData() as Room;
+    const username = useAppSelector((state: RootState) => state.userInfo.username);
     
     return (
-        <div style={{padding: '20px', height: '100%', display: 'flex', flexDirection: 'row'}}>
-            <div className="room_pane">
-                <GameSettings title={roomData.title} {...roomData.gameSettings} updateSettings={() => console.log('hi')} />
-                <RoomMembers curCapacity={roomData.curCapacity} maxCapacity={roomData.maxCapacity} />
-                <div style={{ height: '40px', textAlign: 'left'}}>
-                    <Button variant='outlined'>Leave Room</Button>
+        <WebSocketProvider roomID={roomData.id}>
+            <div style={{padding: '20px', height: '100%', display: 'flex', flexDirection: 'row'}}>
+                <div className="room_pane">
+                    <GameSettings title={roomData.title} {...roomData.gameSettings} updateSettings={() => console.log('hi')} />
+                    <RoomMembers 
+                    curCapacity={roomData.curCapacity} 
+                    maxCapacity={roomData.maxCapacity} />
+                    <div style={{ height: '40px', textAlign: 'left'}}>
+                        <Button variant='outlined'>Leave Room</Button>
+                    </div>
+                </div>
+                <div className="room_pane">
+                    <ChatPane username={username} />
                 </div>
             </div>
-            <div className="room_pane">
-                <ChatPane roomID={roomData.id} />
-            </div>
-        </div>
+        </WebSocketProvider>
     );
 }
