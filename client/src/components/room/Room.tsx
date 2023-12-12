@@ -1,6 +1,6 @@
-import { Button } from "@mui/material";
+import { Alert, Button, Snackbar } from "@mui/material";
 import React from "react";
-import { Params, useLoaderData } from "react-router-dom";
+import { Link, Params, useLoaderData } from "react-router-dom";
 import GameSettings from "./GameSettings";
 import RoomMembers from "./RoomMembers";
 import ChatPane from "./ChatPane";
@@ -8,27 +8,15 @@ import { useAppSelector } from "../../redux/hooks";
 import { RootState } from "../../redux/store";
 import { getRoomData } from "../../dataProvider";
 import { WebSocketProvider } from "../WebSocketContext";
+import { routes } from "../../router/router";
+import { RoomData } from "../lobby/Lobby";
 
-
-interface Room {
-    title: string,
-    curCapacity: number,
-    maxCapacity: number,
-    gameSettings: GameSettings,
-    id: string
-}
 
 interface GameSettings {
     mode: number,
     difficulty: number,
     timeLimit: number,
     problem: string,
-}
-
-interface ChatMessage {
-    sender: string,
-    message: string,
-    timestamp: number
 }
 
 export async function loader({ params }: { params: Params<"roomID"> }) {
@@ -44,17 +32,21 @@ export async function loader({ params }: { params: Params<"roomID"> }) {
 
 export default function Room() {
 
-    const roomData = useLoaderData() as Room;
+    const roomData = useLoaderData() as RoomData;
     const username = useAppSelector((state: RootState) => state.userInfo.username);
+    const loggedIn = useAppSelector((state: RootState) => state.userInfo.loggedIn);
     
     return (
         <WebSocketProvider roomID={roomData.id}>
             <div style={{padding: '20px', height: '100%', display: 'flex', flexDirection: 'row'}}>
                 <div className="room_pane">
-                    <GameSettings title={roomData.title} {...roomData.gameSettings} updateSettings={() => console.log('hi')} />
+                    <GameSettings 
+                    title={roomData.Title}
+                    difficulty={roomData.Difficulty}
+                    updateSettings={() => console.log('hi')} />
                     <RoomMembers 
-                    curCapacity={roomData.curCapacity} 
-                    maxCapacity={roomData.maxCapacity} />
+                    users={roomData.Users} 
+                    maxCapacity={roomData.MaxCapacity} />
                     <div style={{ height: '40px', textAlign: 'left'}}>
                         <Button variant='outlined'>Leave Room</Button>
                     </div>
@@ -62,6 +54,9 @@ export default function Room() {
                 <div className="room_pane">
                     <ChatPane username={username} />
                 </div>
+                <Snackbar open={!loggedIn} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+                    <Alert variant='filled' severity="warning">You're currently not logged in, so you won't be able to participate in this room. <Link to={routes.login}>Login here :)</Link></Alert>
+                </Snackbar>
             </div>
         </WebSocketProvider>
     );

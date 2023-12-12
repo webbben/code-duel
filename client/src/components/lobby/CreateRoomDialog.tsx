@@ -55,6 +55,7 @@ export default function CreateRoomDialog(props: CreateRoomDialogProps) {
                 console.log('Room created successfully!');
                 console.log(json);
                 props.handleClose();
+                // TODO navigate to new room
                 //navigate('/');
             } else {
               console.error('Failed to create room:', response.statusText);

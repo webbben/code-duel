@@ -5,61 +5,33 @@ import '../../styles/Lobby.css'
 import { useAppSelector } from "../../redux/hooks";
 import { RootState } from "../../redux/store";
 import CreateRoomDialog from "./CreateRoomDialog";
-import { getRoomList } from "../../dataProvider";
+import { getRoomList, joinRoom } from "../../dataProvider";
 import { useNavigate } from "react-router-dom";
 import { routes } from "../../router/router";
 
-interface room {
-    title: string,
-    owner: string,
-    difficulty: number,
-    curcapacity: number,
-    maxcapacity: number,
-    status: string,
-    allowSpectators: boolean,
+export interface RoomData {
+    Title: string,
+    Owner: string,
+    Difficulty: number,
+    Users: string[]
+    MaxCapacity: number,
+    ReqPassword: boolean,
+    Password: string,
+    Status: string,
     id: string
 }
-
-const exampleRooms: room[] = [
-    {
-        title: 'Collab room',
-        owner: 'newbiecoder4',
-        difficulty: 1,
-        curcapacity: 2,
-        maxcapacity: 5,
-        status: 'waiting',
-        allowSpectators: true,
-        id: 'room1'
-    },
-    {
-        title: 'X Technical Interview',
-        owner: 'elonmusk',
-        difficulty: 3,
-        curcapacity: 2,
-        maxcapacity: 2,
-        status: 'in progress',
-        allowSpectators: false,
-        id: 'room2'
-    },
-    {
-        title: 'FFA Code Race',
-        owner: 'leetcoder420',
-        difficulty: 2,
-        curcapacity: 3,
-        maxcapacity: 5,
-        status: 'waiting',
-        allowSpectators: true,
-        id: 'room3'
-    }
-];
 
 
 
 export default function Lobby() {
 
-    const [rooms, setRooms] = useState<room[]>([]);
+    const [rooms, setRooms] = useState<RoomData[]>([]);
     const [selectedRoom, setSelectedRoom] = useState('');
+
     const loggedIn = useAppSelector((state: RootState) => state.userInfo.loggedIn);
+    const username = useAppSelector((state: RootState) => state.userInfo.username);
+    const idToken = useAppSelector((state: RootState) => state.userInfo.idToken);
+
     const [createRoomDialogOpen, setCreateRoomDialogOpen] = useState(false);
 
     const navigate = useNavigate();
@@ -73,8 +45,16 @@ export default function Lobby() {
         }
     }
 
-    function handleJoinRoom() {
+    async function handleJoinRoom() {
         if (selectedRoom === '') {
+            return;
+        }
+        if (!username || !idToken) {
+            return;
+        }
+        const success = await joinRoom(selectedRoom, idToken);
+        if (!success) {
+            // TODO show feedback to user that joining failed
             return;
         }
         // TODO: add password entry workflow

@@ -52,3 +52,19 @@ export async function verifyToken(token: string): Promise<boolean> {
     }
     return true;
 }
+
+export async function joinRoom(roomID: string, token: string): Promise<boolean> {
+    const response = await fetch(`${serverURL}/protected/rooms/${roomID}/join`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        }
+    });
+    if (!response.ok) {
+        console.error(`failed to join room ${roomID}`, response.statusText);
+        return false;
+    }
+    console.log(`successfully joined room ${roomID}`);
+    return true;
+}

@@ -21,8 +21,9 @@ export default function ChatMessage(props: ChatMessageProps) {
 
     // if there was no previous message, or previous sender is a different user
     const showSender = !props.lastSender || props.lastSender != props.sender;
-    // if there was no previous message, or it's been a minute since the last message
-    const showTimestamp = !props.lastTimestamp || (Math.abs(props.lastTimestamp - props.timestamp) > 60000);
+    // if there was no previous message, or it's been longer than a certain number of minutes
+    const minThreshold = 5;
+    const showTimestamp = !props.lastTimestamp || (Math.abs(props.lastTimestamp - props.timestamp) > (60000 * minThreshold));
 
     const usernameColor = props.sender == props.username ? "#4438cf" : "#8338cf";
 

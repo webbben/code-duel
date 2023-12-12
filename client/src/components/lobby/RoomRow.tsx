@@ -2,15 +2,9 @@ import { Circle } from "@mui/icons-material";
 import { Chip, Grid, ListItem, Typography } from "@mui/material";
 import React from "react";
 import DiffLabel from "./DiffLabel";
+import { RoomData } from "./Lobby";
 
-interface RoomRowProps {
-    title: string,
-    difficulty: number,
-    curcapacity: number,
-    maxcapacity: number,
-    status: string,
-    allowSpectators: boolean,
-    owner: string,
+interface RoomRowProps extends RoomData {
     selectRoom: Function,
     isSelected: boolean,
     id: string
@@ -28,19 +22,19 @@ export default function RoomRow(props: RoomRowProps) {
         <div className={classes} onClick={() => props.selectRoom(props.id)}>
             <Grid container spacing={2}>
                 <Grid item xs={4}>
-                <Typography fontWeight={600} noWrap>{props.title}</Typography>
+                <Typography fontWeight={600} noWrap>{props.Title}</Typography>
                 </Grid>
                 <Grid item xs={3}>
-                <Typography noWrap>{props.owner}</Typography>
+                <Typography noWrap>{props.Owner}</Typography>
                 </Grid>
                 <Grid item xs={1}>
-                <Typography>{props.curcapacity}/{props.maxcapacity}</Typography>
+                <Typography>{props.Users?.length}/{props.MaxCapacity}</Typography>
                 </Grid>
                 <Grid item xs={2}>
-                    <DiffLabel difficulty={props.difficulty}/>
+                    <DiffLabel difficulty={props.Difficulty}/>
                 </Grid>
                 <Grid item xs={2}>
-                <Typography noWrap>{props.status}</Typography>
+                <Typography noWrap>{props.Status}</Typography>
                 </Grid>
             </Grid>
         </div>

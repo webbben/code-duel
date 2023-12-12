@@ -7,23 +7,61 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"slices"
+	"sync"
 
+	"cloud.google.com/go/firestore"
 	"github.com/gorilla/mux"
 	"github.com/webbben/code-duel/firebase"
 	authHandlers "github.com/webbben/code-duel/handlers/auth"
+	"github.com/webbben/code-duel/handlers/general"
 	"github.com/webbben/code-duel/models"
 )
 
-func JoinRoomHandler(w http.ResponseWriter, r *http.Request) {
-	// lock to handle concurrency, and defer unlock
+var (
+	// mutex for locking handlers for joining and leaving rooms
+	roomMutexes sync.Map
+)
 
-	// check if the room requires a password - if it does, verify the password attached in a header or body property.
+func JoinRoomHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	roomID := vars["id"]
+
+	roomMutex := general.GetMappedMutex(roomID, &roomMutexes)
+	roomMutex.Lock()
+	defer roomMutex.Unlock()
+
+	roomData := loadRoomData(roomID)
+	if roomData == nil {
+		http.Error(w, fmt.Sprintf("Failed to join room: failed to fetch data for room %s", roomID), http.StatusBadRequest)
+		return
+	}
+
+	// TODO: check if the room requires a password - if it does, verify the password
 
 	// check if the room is full - if it is, return with a failure
+	if len(roomData.Users) >= roomData.MaxCapacity {
+		http.Error(w, "Room is already full", http.StatusForbidden)
+		return
+	}
 
-	// if it isn't add the user to the room.
+	// add user to room
+	claims, err := authHandlers.GetUserClaimsFromContext(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	err = addUserToRoom(claims.DisplayName, roomID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	// return success response
+	response := map[string]interface{}{
+		"success": true,
+	}
+	general.WriteResponse(w, response)
 }
 
 func LeaveRoomHandler(w http.ResponseWriter, r *http.Request) {
@@ -90,16 +128,17 @@ func CreateRoom(request *models.CreateRoomRequest, username string) (roomID stri
 		err = errors.New("firestore client is null")
 		return
 	}
-	docRef, _, err := firestoreClient.Collection("rooms").Add(ctx, map[string]interface{}{
-		"owner":       username,
-		"title":       request.Title,
-		"difficulty":  request.Difficulty,
-		"maxcapacity": request.MaxCapacity,
-		"curcapacity": 0,
-		"status":      "waiting",
-		"reqpassword": request.ReqPassword,
-		"password":    request.Password,
-	})
+	room := models.Room{
+		Owner:       username,
+		Title:       request.Title,
+		Difficulty:  request.Difficulty,
+		MaxCapacity: request.MaxCapacity,
+		Users:       make([]string, 0),
+		Status:      "waiting",
+		ReqPassword: request.ReqPassword,
+		Password:    request.Password,
+	}
+	docRef, _, err := firestoreClient.Collection("rooms").Add(ctx, room)
 	if err != nil {
 		log.Fatalf("Failed creating room: %v", err)
 		return
@@ -160,16 +199,7 @@ func GetRoomHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "No room ID found in request vars", http.StatusBadRequest)
 		return
 	}
-	firestoreClient := firebase.GetFirestoreClient()
-	ctx := context.Background()
-
-	snapshot, err := firestoreClient.Collection("rooms").Doc(roomID).Get(ctx)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	roomData := snapshot.Data()
-
+	roomData := loadRoomData(roomID)
 	response := map[string]interface{}{
 		"success": true,
 		"room":    roomData,
@@ -182,4 +212,59 @@ func GetRoomHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(responseJSON)
+}
+
+// loads the data for a room from firestore
+func loadRoomData(roomID string) *models.Room {
+	firestoreClient := firebase.GetFirestoreClient()
+	ctx := context.Background()
+	snapshot, err := firestoreClient.Collection("rooms").Doc(roomID).Get(ctx)
+	if err != nil {
+		return nil
+	}
+	var roomData models.Room
+	err = snapshot.DataTo(&roomData)
+	if err != nil {
+		return nil
+	}
+	return &roomData
+}
+
+func addUserToRoom(username string, roomID string) error {
+	firestoreClient := firebase.GetFirestoreClient()
+	ctx := context.Background()
+	// Reference to the room document
+	roomRef := firestoreClient.Collection("rooms").Doc(roomID)
+
+	err := firestoreClient.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+		// Get the current room data
+		doc, err := tx.Get(roomRef)
+		if err != nil {
+			return err
+		}
+		var room models.Room
+		if err := doc.DataTo(&room); err != nil {
+			return err
+		}
+
+		// user is already in the room, so do nothing
+		if slices.Contains(room.Users, username) {
+			return nil
+		}
+
+		room.Users = append(room.Users, username)
+		// Update the document in Firestore
+		err = tx.Update(roomRef, []firestore.Update{
+			{Path: "Users", Value: room.Users},
+		})
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("Failed to update users in room: %v", err)
+	}
+	return nil
 }

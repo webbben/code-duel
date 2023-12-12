@@ -4,10 +4,10 @@ import "../../styles/Room.css";
 
 interface GameSettingsProps {
     title: string,
-    mode: number,
+    mode?: number,
     difficulty: number,
-    timeLimit: number,
-    problem: string,
+    timeLimit?: number,
+    problem?: string,
     updateSettings: Function
 }
 
