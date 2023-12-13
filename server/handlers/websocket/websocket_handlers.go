@@ -7,16 +7,29 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
 
+// general message struct, including all possible fields in a message. fields will vary depending on type
 type Message struct {
-	Type      string `json:"type"`
-	Content   string `json:"content"`
-	Room      string `json:"room"`
-	Sender    string `json:"sender"`
-	Timestamp int    `json:"timestamp"`
+	Type       string     `json:"type"`       // type of message: "chat_message", "room_message", etc.
+	Room       string     `json:"room"`       // (all messages) room ID
+	Timestamp  int        `json:"timestamp"`  // (all messages) timestamp
+	Content    string     `json:"content"`    // (chat_message) chat message content
+	Sender     string     `json:"sender"`     // (chat_message) chat message sender
+	RoomUpdate RoomUpdate `json:"roomupdate"` // (room_update) update made to the room
+}
+
+type RoomUpdate struct {
+	Type string      `json:"type"`
+	Data interface{} `json:"data"`
+}
+
+type DataPayload struct {
+	Type  string `json:"type"`
+	Value any    `json:"value"`
 }
 
 var (
@@ -80,12 +93,32 @@ func HandleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		log.Printf("received message from client: %s", receivedMessage.Type)
+
+		// we'll handle each message type explicitly to ensure correct info is sent
 		switch receivedMessage.Type {
-		case "message":
-			// Broadcast the message to all connected clients in the same room
-			log.Printf("message from %s: %s", receivedMessage.Sender, receivedMessage.Content)
-			broadcastMessage(receivedMessage, conn)
+		case "chat_message":
+			// chat messages
+			log.Printf("(room %s) chat message from %s: %s", receivedMessage.Room, receivedMessage.Sender, receivedMessage.Content)
+			messageToSend := Message{
+				Type:      "chat_message",
+				Room:      receivedMessage.Room,
+				Timestamp: receivedMessage.Timestamp,
+				Content:   receivedMessage.Content,
+				Sender:    receivedMessage.Sender,
+			}
+			broadcastMessage(messageToSend, conn)
 			// We don't save the message history in firebase, just to preserve storage space
+		case "room_message":
+			// messages for updating room settings, users, etc.
+			log.Printf("(room %s) room update: %s", receivedMessage.Room, receivedMessage.RoomUpdate.Type)
+			messageToSend := Message{
+				Type:       "room_message",
+				Room:       receivedMessage.Room,
+				Timestamp:  receivedMessage.Timestamp,
+				RoomUpdate: receivedMessage.RoomUpdate,
+			}
+			broadcastMessage(messageToSend, conn)
 		}
 	}
 }
@@ -95,20 +128,48 @@ func broadcastMessage(message Message, sendingConnection *websocket.Conn) {
 	roomClientsMutex.Lock()
 	defer roomClientsMutex.Unlock()
 
+	log.Printf("broadcasting to room %s: %s", message.Room, message.Type)
+	counter := 0
+
 	for client := range roomClients[message.Room] {
-		// don't send messages back to the sending client
+		// don't send messages back to the sending client, if applicable
 		if client == sendingConnection {
 			continue
 		}
 		err := client.WriteJSON(Message{
-			Type:      "message",
-			Content:   message.Content,
-			Room:      message.Room,
-			Sender:    message.Sender,
-			Timestamp: message.Timestamp,
+			Type:       message.Type,
+			Timestamp:  message.Timestamp,
+			Room:       message.Room,
+			Content:    message.Content,
+			Sender:     message.Sender,
+			RoomUpdate: message.RoomUpdate,
 		})
 		if err != nil {
 			log.Println(err)
 		}
+		counter += 1
 	}
+	log.Printf("broadcast to %v clients", counter)
+}
+
+// broadcasts when a user joins or leaves a room
+func BroadcastUserJoinLeave(username string, roomID string, join bool) {
+	var updateType string
+	if join {
+		updateType = "USER_JOIN"
+	} else {
+		updateType = "USER_LEAVE"
+	}
+	messageToSend := Message{
+		Type:      "room_message",
+		Room:      roomID,
+		Timestamp: int(time.Now().UnixMilli()),
+		RoomUpdate: RoomUpdate{
+			Type: updateType,
+			Data: DataPayload{
+				Value: username,
+			},
+		},
+	}
+	broadcastMessage(messageToSend, nil)
 }

@@ -17,7 +17,8 @@ function formatTime(timestamp: number) {
     return `(${hours}:${minutes})`;
 }
 
-export default function ChatMessage(props: ChatMessageProps) {
+// renamed to `ChatMessageElem` since interface ChatMessage was a conflict
+export default function ChatMessageElem(props: ChatMessageProps) {
 
     // if there was no previous message, or previous sender is a different user
     const showSender = !props.lastSender || props.lastSender != props.sender;

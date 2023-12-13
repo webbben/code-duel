@@ -1,23 +1,13 @@
-import { Alert, Button, Snackbar } from "@mui/material";
 import React from "react";
-import { Link, Params, useLoaderData, useNavigate } from "react-router-dom";
-import GameSettings from "./GameSettings";
-import RoomMembers from "./RoomMembers";
-import ChatPane from "./ChatPane";
-import { useAppSelector } from "../../redux/hooks";
-import { RootState } from "../../redux/store";
-import { getRoomData, leaveRoom } from "../../dataProvider";
+import { Params, useLoaderData } from "react-router-dom";
+import { getRoomData } from "../../dataProvider";
 import { WebSocketProvider } from "../WebSocketContext";
-import { routes } from "../../router/router";
 import { RoomData } from "../lobby/Lobby";
+import RoomContent from "./RoomContent";
 
-
-interface GameSettings {
-    mode: number,
-    difficulty: number,
-    timeLimit: number,
-    problem: string,
-}
+// 
+// A wrapper for RoomContent, since we need to load WebSocketProvider before its hooks are able to be used.
+//
 
 export async function loader({ params }: { params: Params<"roomID"> }) {
     const roomID = params.roomID;
@@ -31,48 +21,11 @@ export async function loader({ params }: { params: Params<"roomID"> }) {
 }
 
 export default function Room() {
-
     const roomData = useLoaderData() as RoomData;
-    const username = useAppSelector((state: RootState) => state.userInfo.username);
-    const loggedIn = useAppSelector((state: RootState) => state.userInfo.loggedIn);
-    const idToken = useAppSelector((state: RootState) => state.userInfo.idToken);
-    const navigate = useNavigate();
 
-    async function handleLeaveRoom() {
-        if (!roomData.id || !idToken) {
-            return;
-        }
-        const success = await leaveRoom(roomData.id, idToken);
-        if (!success) {
-            console.log("failed to leave room");
-            // TODO show visual feedback
-            return;
-        }
-        navigate(routes.root);
-    }
-    
     return (
         <WebSocketProvider roomID={roomData.id}>
-            <div style={{padding: '20px', height: '100%', display: 'flex', flexDirection: 'row'}}>
-                <div className="room_pane">
-                    <GameSettings 
-                    title={roomData.Title}
-                    difficulty={roomData.Difficulty}
-                    updateSettings={() => console.log('hi')} />
-                    <RoomMembers 
-                    users={roomData.Users} 
-                    maxCapacity={roomData.MaxCapacity} />
-                    <div style={{ height: '40px', textAlign: 'left'}}>
-                        <Button variant='outlined' onClick={() => handleLeaveRoom()}>Leave Room</Button>
-                    </div>
-                </div>
-                <div className="room_pane">
-                    <ChatPane username={username} />
-                </div>
-                <Snackbar open={!loggedIn} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-                    <Alert variant='filled' severity="warning">You're currently not logged in, so you won't be able to participate in this room. <Link to={routes.login}>Login here :)</Link></Alert>
-                </Snackbar>
-            </div>
+            <RoomContent roomData={roomData} />
         </WebSocketProvider>
     );
 }

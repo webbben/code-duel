@@ -1,13 +1,15 @@
-import { Button, Grid, Stack, Typography } from "@mui/material";
+import { Button, Grid, IconButton, Stack, Typography } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import RoomRow from "./RoomRow";
-import '../../styles/Lobby.css'
+import '../../styles/Lobby.css';
+import '../../styles/general.css';
 import { useAppSelector } from "../../redux/hooks";
 import { RootState } from "../../redux/store";
 import CreateRoomDialog from "./CreateRoomDialog";
 import { getRoomList, joinRoom } from "../../dataProvider";
-import { useNavigate } from "react-router-dom";
+import { useLoaderData, useNavigate, useRevalidator } from "react-router-dom";
 import { routes } from "../../router/router";
+import { Refresh } from "@mui/icons-material";
 
 export interface RoomData {
     Title: string,
@@ -21,11 +23,16 @@ export interface RoomData {
     id: string
 }
 
+export async function loader() {
+    const roomList = await getRoomList();
+    return roomList;
+}
+
 
 
 export default function Lobby() {
 
-    const [rooms, setRooms] = useState<RoomData[]>([]);
+    const rooms = useLoaderData() as RoomData[];
     const [selectedRoom, setSelectedRoom] = useState('');
 
     const loggedIn = useAppSelector((state: RootState) => state.userInfo.loggedIn);
@@ -35,6 +42,7 @@ export default function Lobby() {
     const [createRoomDialogOpen, setCreateRoomDialogOpen] = useState(false);
 
     const navigate = useNavigate();
+    const revalidator = useRevalidator();
 
     function toggleSelectRoom(roomID: string) {
         if (selectedRoom === roomID) {
@@ -67,20 +75,20 @@ export default function Lobby() {
         // the pop up UI component will take it from there as far as making the API request
     }
 
-    useEffect(() => {
-        getRoomList(setRooms);
-        //setRooms(exampleRooms);
-    }, []);
-
     return (
         <div className="lobby_main">
             <Grid container>
                 <Grid item xs={9}>
                     <div className="rooms_card">
-                    <Typography variant="h6" gutterBottom>Rooms</Typography>
+                    <div className="toolbar">
+                        <Typography variant="h6" gutterBottom>Rooms</Typography>
+                        <IconButton onClick={() => revalidator.revalidate()}>
+                            <Refresh />
+                        </IconButton>
+                    </div>
                     <Stack spacing={1}>
                         {
-                            rooms.map((room) => {
+                            rooms?.map((room) => {
                                 return (
                                     <RoomRow 
                                     {...room} 
@@ -100,9 +108,6 @@ export default function Lobby() {
                     variant="outlined" 
                     disabled={selectedRoom === '' || !loggedIn}
                     onClick={() => handleJoinRoom()}>Join room</Button>
-                    <Button 
-                    variant="outlined" 
-                    disabled={selectedRoom === '' || !loggedIn}>Spectate</Button>
                     <Button 
                     variant='outlined' 
                     disabled={!loggedIn}

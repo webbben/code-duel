@@ -15,6 +15,7 @@ import (
 	"github.com/webbben/code-duel/firebase"
 	authHandlers "github.com/webbben/code-duel/handlers/auth"
 	"github.com/webbben/code-duel/handlers/general"
+	"github.com/webbben/code-duel/handlers/websocket"
 	"github.com/webbben/code-duel/models"
 )
 
@@ -48,6 +49,14 @@ func JoinOrLeaveRoomHandler(w http.ResponseWriter, r *http.Request, join bool) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
+	}
+
+	// tell other clients in this room that this user has joined or left
+	websocket.BroadcastUserJoinLeave(claims.DisplayName, roomID, join)
+	if join {
+		log.Printf("user %s joined room %s", claims.DisplayName, roomID)
+	} else {
+		log.Printf("user %s left room %s", claims.DisplayName, roomID)
 	}
 
 	response := map[string]interface{}{

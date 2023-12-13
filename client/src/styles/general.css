@@ -1,0 +1,11 @@
+/*
+Using this to store generalized helper classes that aren't necessarily component-specific
+*/
+
+.toolbar {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}

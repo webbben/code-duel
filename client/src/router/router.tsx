@@ -1,7 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import Login from "../components/login/Login";
 import App from "../App";
-import Lobby from "../components/lobby/Lobby";
+import Lobby, { loader as lobbyLoader } from "../components/lobby/Lobby";
 import Signup from "../components/login/Signup";
 import Room, { loader as roomLoader } from "../components/room/Room";
 
@@ -19,7 +19,8 @@ export const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: <Lobby />
+                element: <Lobby />,
+                loader: lobbyLoader
             },
             {
                 path: routes.login,

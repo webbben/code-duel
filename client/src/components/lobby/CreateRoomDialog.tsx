@@ -5,6 +5,7 @@ import { HelpOutline } from "@mui/icons-material";
 import { useAppSelector } from "../../redux/hooks";
 import { RootState } from "../../redux/store";
 import { serverURL } from "../../dataProvider";
+import { routes } from "../../router/router";
 
 interface CreateRoomDialogProps {
     open: boolean,
@@ -55,14 +56,16 @@ export default function CreateRoomDialog(props: CreateRoomDialogProps) {
                 console.log('Room created successfully!');
                 console.log(json);
                 props.handleClose();
-                // TODO navigate to new room
-                //navigate('/');
+                navigate(`${routes.room}/${json.roomID}`);
+                return;
             } else {
               console.error('Failed to create room:', response.statusText);
             }
         } catch (error) {
             console.error('Error creating room:', error);
         }
+        // if it makes it here, an error occurred / creating the room failed.
+        // TODO: show feedback to user
     }
 
     return (

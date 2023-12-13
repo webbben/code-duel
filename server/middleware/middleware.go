@@ -34,7 +34,7 @@ func CorsMiddleware(next http.Handler) http.Handler {
 func AuthenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Extract the token from the Authorization header
-		log.Println("auth middleware")
+		//log.Println("auth middleware")
 		tokenString, err := authHandlers.ExtractTokenFromHeader(r.Header.Get("Authorization"))
 		if err != nil {
 			log.Println("failed to extract token from header")
