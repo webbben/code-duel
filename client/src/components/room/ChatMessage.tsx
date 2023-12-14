@@ -7,7 +7,8 @@ interface ChatMessageProps {
     timestamp: number,
     username?: string
     lastSender?: string,
-    lastTimestamp?: number
+    lastTimestamp?: number,
+    serverNotif?: boolean
 }
 
 function formatTime(timestamp: number) {
@@ -27,6 +28,14 @@ export default function ChatMessageElem(props: ChatMessageProps) {
     const showTimestamp = !props.lastTimestamp || (Math.abs(props.lastTimestamp - props.timestamp) > (60000 * minThreshold));
 
     const usernameColor = props.sender == props.username ? "#4438cf" : "#8338cf";
+
+    if (props.serverNotif) {
+        return (
+            <div className="room_chatMessage">
+                <span style={{ fontWeight: 'lighter' }}>{props.content}</span>
+            </div>
+        )
+    }
 
     return (
         <div className="room_chatMessage" style={{ marginTop: showSender || showTimestamp ? '0.5em' : 'unset' }}>

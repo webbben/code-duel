@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/webbben/code-duel/firebase/rooms"
+	authHandlers "github.com/webbben/code-duel/handlers/auth"
 )
 
 // general message struct, including all possible fields in a message. fields will vary depending on type
@@ -60,11 +62,20 @@ func HandleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// wait until an auth message comes over websocket before allowing regular communication
+	authorized := false
+	username := ""
+
 	defer func() {
 		// Remove the client when the connection is closed
 		roomClientsMutex.Lock()
 		delete(roomClients[room], conn)
 		roomClientsMutex.Unlock()
+		// try to remove the user from room as well, just in case they didn't leave properly
+		if username != "" {
+			rooms.AddOrRemoveUser(username, room, false)
+			BroadcastUserJoinLeave(username, room, false)
+		}
 		conn.Close()
 	}()
 
@@ -97,8 +108,31 @@ func HandleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 
 		// we'll handle each message type explicitly to ensure correct info is sent
 		switch receivedMessage.Type {
+		case "authorization":
+			// authorization message required before regular communication is allowed
+			if authorized {
+				break
+			}
+			authToken := receivedMessage.Content
+			claimsMap, err := authHandlers.VerifyTokenAndGetClaims(authToken)
+			if err != nil {
+				http.Error(w, "Websocket: Failed to validate auth token", http.StatusUnauthorized)
+				break
+			}
+			claims, err := authHandlers.ExtractTokenClaims(claimsMap)
+			if err != nil {
+				http.Error(w, "Websocket: Failed to extract claims from token", http.StatusUnauthorized)
+				break
+			}
+			// authorize and record user info for this connection
+			authorized = true
+			username = claims.DisplayName
+			BroadcastUserJoinLeave(username, room, true)
 		case "chat_message":
 			// chat messages
+			if !authorized {
+				break
+			}
 			log.Printf("(room %s) chat message from %s: %s", receivedMessage.Room, receivedMessage.Sender, receivedMessage.Content)
 			messageToSend := Message{
 				Type:      "chat_message",
@@ -111,6 +145,9 @@ func HandleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 			// We don't save the message history in firebase, just to preserve storage space
 		case "room_message":
 			// messages for updating room settings, users, etc.
+			if !authorized {
+				break
+			}
 			log.Printf("(room %s) room update: %s", receivedMessage.Room, receivedMessage.RoomUpdate.Type)
 			messageToSend := Message{
 				Type:       "room_message",
@@ -150,6 +187,9 @@ func broadcastMessage(message Message, sendingConnection *websocket.Conn) {
 		counter += 1
 	}
 	log.Printf("broadcast to %v clients", counter)
+	if counter > 2 {
+		fmt.Println(roomClients[message.Room])
+	}
 }
 
 // broadcasts when a user joins or leaves a room

@@ -46,10 +46,12 @@ export default function RoomContent(props: RoomContentProps) {
                 console.log(`room difficulty set to ${roomUpdate.data.value}.`);
                 break;
             case RoomUpdateTypes.userJoin:
+                if (roomData.Users.includes(roomUpdate.data.value)) break;
                 roomData.Users.push(roomUpdate.data.value);
                 console.log(`user ${roomUpdate.data.value} has joined the room.`);
                 break;
             case RoomUpdateTypes.userLeave:
+                if (!roomData.Users.includes(roomUpdate.data.value)) break;
                 roomData.Users = roomData.Users.filter((user) => user != roomUpdate.data.value);
                 console.log(`user ${roomUpdate.data.value} has left the room.`);
                 break;

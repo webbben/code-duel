@@ -25,6 +25,8 @@ export interface RoomMessage {
     timestamp: number
 }
 
+export type Message = RoomMessage | ChatMessage;
+
 export interface RoomUpdate {
     type: string,
     data: {
@@ -59,7 +61,9 @@ const WebSocketContext = createContext<WebSocketContextType | undefined>(undefin
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, roomID }) => {
 
     const ws = useRef<WebSocket | null>(null);
+    const messageQueue = useRef<Message[]>([]); // enqueue messages if they are unable to be sent
     const loggedIn = useAppSelector((state: RootState) => state.userInfo.loggedIn);
+    const idToken = useAppSelector((state: RootState) => state.userInfo.idToken);
 
     useEffect(() => {
         if (!loggedIn) {
@@ -70,6 +74,20 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
 
         ws.current.addEventListener('open', (event) => {
             console.log('WebSocket connection opened');
+            // send auth info
+            if (idToken) {
+                const message: Message = {
+                    type: "authorization",
+                    content: idToken,
+                    sender: "websocket",
+                    timestamp: Date.now()
+                }
+                sendWebsocketMessage(message);
+            }
+            // check for queued messages
+            if (messageQueue.current?.length > 0) {
+                sendQueuedMessages();
+            }
         });
 
         ws.current.addEventListener('message', (event) => {
@@ -133,6 +151,33 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
         ws.current.send(JSON.stringify(message));
         console.log("sent message", message);
     };
+
+    const sendWebsocketMessage = (msg: Message) => {
+        if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
+            enqueueMessage(msg);
+            return;
+        }
+        ws.current.send(JSON.stringify(msg));
+        return;
+    }
+
+    const enqueueMessage = (msg: Message) => {
+        if (!messageQueue.current) {
+            messageQueue.current = [];
+        }
+        messageQueue.current.push(msg);
+    }
+
+    const sendQueuedMessages = () => {
+        if (!messageQueue.current || !ws.current || ws.current.readyState !== WebSocket.OPEN) {
+            return;
+        }
+        const messages = [...messageQueue.current];
+        messageQueue.current = [];
+        for (const msg of messages) {
+            sendWebsocketMessage(msg);
+        }
+    }
 
     /**
      * function for subscribing and setting the callback behavior for when chat messages are received over websocket. returns the unsubscribe function, for cleanup.

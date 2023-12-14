@@ -1,4 +1,4 @@
-// server/firebase/firestore.go
+// for initializing firebase and getting firestore and auth clients
 package firebase
 
 import (

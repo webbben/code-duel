@@ -2,7 +2,7 @@ import { ArrowUpward } from "@mui/icons-material";
 import { IconButton, InputAdornment, TextField } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import ChatMessageElem from "./ChatMessage";
-import { ChatMessage, useWebSocket } from "../WebSocketContext";
+import { ChatMessage, RoomMessage, RoomUpdateTypes, messageTypes, useWebSocket } from "../WebSocketContext";
 
 interface ChatPaneProps {
     username?: string,
@@ -12,7 +12,7 @@ export default function ChatPane(props: ChatPaneProps) {
 
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [messageInput, setMessageInput] = useState('');
-    const { sendChatMessage, handleChatMessage } = useWebSocket();
+    const { sendChatMessage, handleChatMessage, handleRoomMessage } = useWebSocket();
 
     function addMessage(chatMsg: ChatMessage) {
         setMessages(prevMessages => [...prevMessages, {...chatMsg}]);
@@ -40,14 +40,34 @@ export default function ChatPane(props: ChatPaneProps) {
     }
 
     useEffect(() => {
-        const unsubscribe = handleChatMessage((chatMsg: ChatMessage) => {
+        const unsubChatMessages = handleChatMessage((chatMsg: ChatMessage) => {
             console.log(`received message from ${chatMsg.sender}`);
             if (chatMsg.sender === props.username) return;
             addMessage(chatMsg);
         });
 
+        const unsubRoomMessages = handleRoomMessage((roomMsg: RoomMessage) => {
+            const type = roomMsg.roomupdate.type;
+            if (type === RoomUpdateTypes.userJoin) {
+                addMessage({
+                    type: "server_notify",
+                    sender: "server_notify",
+                    content: `${roomMsg.roomupdate.data.value} has joined the room`,
+                    timestamp: roomMsg.timestamp
+                });
+            }
+            if (type === RoomUpdateTypes.userLeave) {
+                addMessage({
+                    type: "server_notify",
+                    sender: "server_notify",
+                    content: `${roomMsg.roomupdate.data.value} has left the room`,
+                    timestamp: roomMsg.timestamp
+                });
+            }
+        });
+
         return () => {
-            unsubscribe();
+            unsubChatMessages();
         }
     }, []);
 
@@ -63,6 +83,7 @@ export default function ChatPane(props: ChatPaneProps) {
                     }
                     return (
                         <ChatMessageElem
+                        serverNotif={msg.type === "server_notify"}
                         key={msg.timestamp}
                         {...msg}
                         lastSender={lastSender}
@@ -76,6 +97,12 @@ export default function ChatPane(props: ChatPaneProps) {
             value={messageInput}
             fullWidth 
             onChange={(e) => setMessageInput(e.target.value)}
+            onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                    sendMessage();
+                    e.preventDefault();
+                }
+            }}
             InputProps={{ 
                 sx: { borderRadius: '20px' },
                 endAdornment: (

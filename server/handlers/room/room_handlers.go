@@ -3,19 +3,16 @@ package roomHandlers
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
-	"slices"
 	"sync"
 
-	"cloud.google.com/go/firestore"
 	"github.com/gorilla/mux"
 	"github.com/webbben/code-duel/firebase"
+	"github.com/webbben/code-duel/firebase/rooms"
 	authHandlers "github.com/webbben/code-duel/handlers/auth"
 	"github.com/webbben/code-duel/handlers/general"
-	"github.com/webbben/code-duel/handlers/websocket"
 	"github.com/webbben/code-duel/models"
 )
 
@@ -45,14 +42,12 @@ func JoinOrLeaveRoomHandler(w http.ResponseWriter, r *http.Request, join bool) {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
-	err = addOrRemoveUser(claims.DisplayName, roomID, join)
+	err = rooms.AddOrRemoveUser(claims.DisplayName, roomID, join)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
 
-	// tell other clients in this room that this user has joined or left
-	websocket.BroadcastUserJoinLeave(claims.DisplayName, roomID, join)
 	if join {
 		log.Printf("user %s joined room %s", claims.DisplayName, roomID)
 	} else {
@@ -82,7 +77,7 @@ func CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create new room object with the provided params, and set the ordering user as the owner
-	roomID, err := CreateRoom(&request, username)
+	roomID, err := rooms.CreateRoom(&request, username)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -102,35 +97,6 @@ func CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(responseJSON)
-}
-
-func CreateRoom(request *models.CreateRoomRequest, username string) (roomID string, err error) {
-	ctx := context.Background()
-
-	// create user document in firestore
-	firestoreClient := firebase.GetFirestoreClient()
-	if firestoreClient == nil {
-		fmt.Printf("firestore client is null!")
-		err = errors.New("firestore client is null")
-		return
-	}
-	room := models.Room{
-		Owner:       username,
-		Title:       request.Title,
-		Difficulty:  request.Difficulty,
-		MaxCapacity: request.MaxCapacity,
-		Users:       make([]string, 0),
-		Status:      "waiting",
-		ReqPassword: request.ReqPassword,
-		Password:    request.Password,
-	}
-	docRef, _, err := firestoreClient.Collection("rooms").Add(ctx, room)
-	if err != nil {
-		log.Fatalf("Failed creating room: %v", err)
-		return
-	}
-	roomID = docRef.ID
-	return
 }
 
 func DeleteRoomHandler(w http.ResponseWriter, r *http.Request) {
@@ -186,7 +152,7 @@ func GetRoomHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "No room ID found in request vars", http.StatusBadRequest)
 		return
 	}
-	roomData := loadRoomData(roomID)
+	roomData := rooms.LoadRoomData(roomID)
 	response := map[string]interface{}{
 		"success": true,
 		"room":    roomData,
@@ -199,79 +165,4 @@ func GetRoomHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(responseJSON)
-}
-
-// loads the data for a room from firestore
-func loadRoomData(roomID string) *models.Room {
-	firestoreClient := firebase.GetFirestoreClient()
-	ctx := context.Background()
-	snapshot, err := firestoreClient.Collection("rooms").Doc(roomID).Get(ctx)
-	if err != nil {
-		return nil
-	}
-	var roomData models.Room
-	err = snapshot.DataTo(&roomData)
-	if err != nil {
-		return nil
-	}
-	return &roomData
-}
-
-// adds or removes a user from a room. code is combined since logic is similar
-func addOrRemoveUser(username string, roomID string, add bool) error {
-	firestoreClient := firebase.GetFirestoreClient()
-	ctx := context.Background()
-	// Reference to the room document
-	roomRef := firestoreClient.Collection("rooms").Doc(roomID)
-
-	err := firestoreClient.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
-		// Get the current room data
-		doc, err := tx.Get(roomRef)
-		if err != nil {
-			return err
-		}
-		var room models.Room
-		err = doc.DataTo(&room)
-		if err != nil {
-			return err
-		}
-		if add {
-			if len(room.Users) >= room.MaxCapacity {
-				return errors.New("Add user: room is already full.")
-			}
-		} else {
-			// no users in room, so do nothing
-			if len(room.Users) == 0 {
-				return nil
-			}
-		}
-
-		// trying to add user but they're already in the room, so do nothing
-		if add && slices.Contains(room.Users, username) {
-			return nil
-		}
-		// trying to remove user but they're not in room, so do nothing
-		if !add && !slices.Contains(room.Users, username) {
-			return nil
-		}
-
-		if add {
-			room.Users = append(room.Users, username)
-		} else {
-			room.Users = general.RemoveElementFromArray(username, room.Users)
-		}
-		// Update the document in Firestore
-		err = tx.Update(roomRef, []firestore.Update{
-			{Path: "Users", Value: room.Users},
-		})
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-
-	if err != nil {
-		return fmt.Errorf("Failed to update users in room: %v", err)
-	}
-	return nil
 }
