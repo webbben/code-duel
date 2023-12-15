@@ -3,6 +3,7 @@ package firebase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -62,4 +63,39 @@ func GetFirestoreClient() *firestore.Client {
 
 func GetAuthClient() *auth.Client {
 	return authClient
+}
+
+// gets the document at the specified collection, and sets it to the output param
+// the output param should be of the correct type that you expect the data
+//
+// returns an error if anything fails in the process
+func GetDocument(collectionPath string, documentID string) (output interface{}, err error) {
+	ctx := context.Background()
+	snapshot, err := firestoreClient.Collection(collectionPath).Doc(documentID).Get(ctx)
+	if err != nil {
+		return
+	}
+	err = snapshot.DataTo(&output)
+	return
+}
+
+// gets all documents in a given collection
+func GetAllDocsInCollection(collectionPath string) (docs []map[string]interface{}, err error) {
+	collectionRef := firestoreClient.Collection(collectionPath)
+	if collectionRef == nil {
+		err = errors.New("failed to get collection ref")
+		return
+	}
+	ctx := context.Background()
+	snapshots, err := collectionRef.Documents(ctx).GetAll()
+	if err != nil {
+		return
+	}
+	for _, snapshot := range snapshots {
+		id := snapshot.Ref.ID
+		data := snapshot.Data()
+		data["id"] = id // add the document ID too
+		docs = append(docs, data)
+	}
+	return
 }

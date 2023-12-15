@@ -2,12 +2,12 @@ package authHandlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/webbben/code-duel/firebase"
+	"github.com/webbben/code-duel/handlers/general"
 )
 
 type Claims struct {
@@ -39,21 +39,11 @@ func VerifyTokenHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	response := map[string]interface{}{
-		"success":  true,
+	general.WriteResponse(w, true, map[string]interface{}{
 		"userID":   claims.UserID,
 		"username": claims.DisplayName,
 		"email":    claims.Email,
-	}
-	responseJSON, err := json.Marshal(response)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(responseJSON)
+	})
 }
 
 func ExtractTokenFromHeader(authHeader string) (token string, err error) {

@@ -15,6 +15,7 @@ export interface RoomData {
     Title: string,
     Owner: string,
     Difficulty: number,
+    Mode: number,
     Users: string[]
     MaxCapacity: number,
     ReqPassword: boolean,

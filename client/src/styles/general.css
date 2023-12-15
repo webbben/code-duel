@@ -9,3 +9,9 @@ Using this to store generalized helper classes that aren't necessarily component
     align-items: center;
     margin-bottom: 10px;
 }
+
+._flexRow {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}

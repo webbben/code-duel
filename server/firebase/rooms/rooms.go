@@ -44,22 +44,6 @@ func CreateRoom(request *models.CreateRoomRequest, username string) (roomID stri
 	return
 }
 
-// loads the data for a room from firestore
-func LoadRoomData(roomID string) *models.Room {
-	firestoreClient := firebase.GetFirestoreClient()
-	ctx := context.Background()
-	snapshot, err := firestoreClient.Collection("rooms").Doc(roomID).Get(ctx)
-	if err != nil {
-		return nil
-	}
-	var roomData models.Room
-	err = snapshot.DataTo(&roomData)
-	if err != nil {
-		return nil
-	}
-	return &roomData
-}
-
 // adds or removes a user from a room. code is combined since logic is similar
 func AddOrRemoveUser(username string, roomID string, add bool) error {
 	firestoreClient := firebase.GetFirestoreClient()

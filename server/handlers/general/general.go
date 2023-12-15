@@ -1,3 +1,4 @@
+// general utility functions that can be used in various places
 package general
 
 import (
@@ -7,15 +8,37 @@ import (
 )
 
 // writes values to an HTTP response
-func WriteResponse(w http.ResponseWriter, response map[string]interface{}) {
+//
+// pass a success boolean for if the response is a success or not, and optionally provide
+// other values to pass in the response map (or pass it as nil if not needed)
+//
+// you can also pass an httpStatus if you'd like to customize - if more than one is passed, only the first one is used.
+func WriteResponse(w http.ResponseWriter, success bool, response map[string]interface{}, httpStatus ...int) {
+	// use a default status code, or the provided code if present
+	responseStatus := http.StatusOK
+	if !success {
+		responseStatus = http.StatusBadRequest
+	}
+	if len(httpStatus) > 0 {
+		responseStatus = httpStatus[0]
+	}
+	// set the success property of the response body
+	if response == nil {
+		response = map[string]interface{}{}
+	}
+	if success {
+		response["success"] = true
+	} else {
+		response["success"] = false
+	}
 	responseJSON, err := json.Marshal(response)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// return success response
+	// return response
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(responseStatus)
 	w.Write(responseJSON)
 }
 

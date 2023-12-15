@@ -16,21 +16,38 @@ type CreateUserRequest struct {
 
 // API request for creating room
 type CreateRoomRequest struct {
-	Title           string `json:"title"`           // title of the room
-	MaxCapacity     int    `json:"maxcapacity"`     // limit to number of users allowed in room (up to 5)
-	Difficulty      int    `json:"difficulty"`      // difficulty for problems - 1=easy, 2=med, 3=hard
-	ReqPassword     bool   `json:"reqpassword"`     // whether or not a password is required for this room
-	Password        string `json:"password"`        // password for this room (if applicable)
-	AllowSpectators bool   `json:"allowspectators"` // whether or not spectators are allowed
+	Title       string `json:"title"`       // title of the room
+	MaxCapacity int    `json:"maxcapacity"` // limit to number of users allowed in room (up to 5)
+	Difficulty  int    `json:"difficulty"`  // difficulty for problems - 1=easy, 2=med, 3=hard
+	ReqPassword bool   `json:"reqpassword"` // whether or not a password is required for this room
+	Password    string `json:"password"`    // password for this room (if applicable)
 }
 
 type Room struct {
-	Owner       string   `json:"Owner"`       // owner of the room is the user that created it
-	Title       string   `json:"Title"`       // title of the room
-	Difficulty  int      `json:"Difficulty"`  // difficulty of the problems for this room
-	MaxCapacity int      `json:"MaxCapacity"` // limit to number of users allowed in room (up to 5)
-	Users       []string `json:"Users"`       // list of users in the room
-	Status      string   `json:"Status"`      // status of the room; if it's waiting, or in game, etc
-	ReqPassword bool     `json:"ReqPassword"` // whether this room requires a password to join
-	Password    string   `json:"Password"`    // the password for this room, if applicable
+	Owner         string   `json:"Owner"`         // owner of the room is the user that created it
+	Title         string   `json:"Title"`         // title of the room
+	Difficulty    int      `json:"Difficulty"`    // difficulty of the problems for this room
+	MaxCapacity   int      `json:"MaxCapacity"`   // limit to number of users allowed in room (up to 5)
+	Users         []string `json:"Users"`         // list of users in the room
+	Status        string   `json:"Status"`        // status of the room; if it's waiting, or in game, etc
+	ReqPassword   bool     `json:"ReqPassword"`   // whether this room requires a password to join
+	Password      string   `json:"Password"`      // the password for this room, if applicable
+	GameMode      int      `json:"GameMode"`      // game mode; vs or coop
+	TimeLimit     int      `json:"TimeLimit"`     // time limit to solve the problem
+	RandomProblem bool     `json:"RandomProblem"` // whether its a random problem (true) or user selects it (false)
+	Problem       Problem  `json:"Problem"`       // problem to be solved in the game
+}
+
+type Problem struct {
+	ID           string     `json:"id"`
+	Title        string     `json:"Title"`        // title of the problem
+	QuickDesc    string     `json:"QuickDesc"`    // quick description of the problem; seem before starting the game
+	FullDesc     string     `json:"FullDesc"`     // full description; seem once the game has started, and more detailed
+	ExampleCases []TestCase `json:"ExampleCases"` // example test cases shown in the full description, and are simple
+	FullCases    []TestCase `json:"FullCases"`    // larger set of test cases that are run against the solution when submitted
+}
+
+type TestCase struct {
+	Input  any `json:"Input"` // input for a test case
+	Output any `json:"Output"`
 }

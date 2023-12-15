@@ -1,7 +1,6 @@
 package roomHandlers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -53,11 +52,7 @@ func JoinOrLeaveRoomHandler(w http.ResponseWriter, r *http.Request, join bool) {
 	} else {
 		log.Printf("user %s left room %s", claims.DisplayName, roomID)
 	}
-
-	response := map[string]interface{}{
-		"success": true,
-	}
-	general.WriteResponse(w, response)
+	general.WriteResponse(w, true, nil)
 }
 
 func CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
@@ -83,20 +78,9 @@ func CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := map[string]interface{}{
-		"success": true,
-		"roomID":  roomID,
-	}
-	responseJSON, err := json.Marshal(response)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	// return success response if no errors occur
-	fmt.Printf("New room: %+v\n", roomID)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(responseJSON)
+	general.WriteResponse(w, true, map[string]interface{}{
+		"roomID": roomID,
+	}, http.StatusCreated)
 }
 
 func DeleteRoomHandler(w http.ResponseWriter, r *http.Request) {
@@ -109,40 +93,13 @@ func DeleteRoomHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetRoomListHandler(w http.ResponseWriter, r *http.Request) {
-	firestoreClient := firebase.GetFirestoreClient()
-	ctx := context.Background()
-
-	collectionRef := firestoreClient.Collection("rooms")
-	if collectionRef == nil {
-		http.Error(w, "failed to load rooms collection", http.StatusInternalServerError)
-		return
-	}
-	rooms, err := collectionRef.Documents(ctx).GetAll()
+	output, err := firebase.GetAllDocsInCollection("rooms")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
-
-	var output []map[string]interface{}
-	for _, roomSnapshot := range rooms {
-		id := roomSnapshot.Ref.ID
-		data := roomSnapshot.Data()
-		data["id"] = id // add the doc ref ID too
-		output = append(output, data)
-	}
-
-	response := map[string]interface{}{
-		"success": true,
-		"rooms":   output,
-	}
-	responseJSON, err := json.Marshal(response)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(responseJSON)
+	general.WriteResponse(w, true, map[string]interface{}{
+		"rooms": output,
+	})
 }
 
 func GetRoomHandler(w http.ResponseWriter, r *http.Request) {
@@ -152,17 +109,11 @@ func GetRoomHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "No room ID found in request vars", http.StatusBadRequest)
 		return
 	}
-	roomData := rooms.LoadRoomData(roomID)
-	response := map[string]interface{}{
-		"success": true,
-		"room":    roomData,
-	}
-	responseJSON, err := json.Marshal(response)
+	roomData, err := firebase.GetDocument("rooms", roomID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(responseJSON)
+	general.WriteResponse(w, true, map[string]interface{}{
+		"room": roomData,
+	})
 }

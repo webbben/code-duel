@@ -80,7 +80,8 @@ export default function RoomContent(props: RoomContentProps) {
     return (
         <div style={{padding: '20px', height: '100%', display: 'flex', flexDirection: 'row'}}>
             <div className="room_pane">
-                <GameSettings 
+                <GameSettings
+                mode={roomData.Mode}
                 title={roomData.Title}
                 difficulty={roomData.Difficulty}
                 updateSettings={() => console.log('hi')} />

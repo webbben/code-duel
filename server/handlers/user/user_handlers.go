@@ -10,6 +10,7 @@ import (
 	"firebase.google.com/go/auth"
 	"github.com/gorilla/mux"
 	"github.com/webbben/code-duel/firebase"
+	"github.com/webbben/code-duel/handlers/general"
 	"github.com/webbben/code-duel/models"
 )
 
@@ -48,6 +49,8 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: add username validation!
+
 	userID, returnErr := CreateUser(&request)
 	if returnErr != "" {
 		if userID != "" {
@@ -75,20 +78,11 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 		Email:    request.Email,
 		ID:       userID,
 	}
-	response := map[string]interface{}{
+	fmt.Printf("New User: %+v\n", newUser)
+	general.WriteResponse(w, true, map[string]interface{}{
 		"success": true,
 		"user":    newUser,
-	}
-	responseJSON, err := json.Marshal(response)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-	fmt.Printf("New User: %+v\n", newUser)
-	// Respond with a success message
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(responseJSON)
+	}, http.StatusCreated)
 }
 
 // creates the user document in firestore and adds user in firebase auth
