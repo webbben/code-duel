@@ -1,0 +1,18 @@
+{
+    "name": "Hello world!",
+    "difficulty": 1,
+    "quickDesc": "First one to print the given text to stdout wins!",
+    "fullDesc": "Seriously - it's just printing some text to the console. Don't overthink it.",
+    "testCases": [
+        ["Hello world!", "Hello world!"],
+        ["beep boop I'm a bot", "beep boop I'm a bot"],
+        ["", ""]
+    ],
+    "fullCases": [
+        ["abcdefghijklmnopqrstuvwxyz", "abcdefghijklmnopqrstuvwxyz"],
+        ["1234567890", "1234567890"],
+        ["ok do we really need to write test cases for this...", "ok do we really need to write test cases for this..."],
+        [true, "true"],
+        [null, "null"]
+    ]
+}

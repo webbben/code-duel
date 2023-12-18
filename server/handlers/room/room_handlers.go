@@ -96,6 +96,7 @@ func GetRoomListHandler(w http.ResponseWriter, r *http.Request) {
 	output, err := firebase.GetAllDocsInCollection("rooms")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	general.WriteResponse(w, true, map[string]interface{}{
 		"rooms": output,
@@ -112,6 +113,7 @@ func GetRoomHandler(w http.ResponseWriter, r *http.Request) {
 	roomData, err := firebase.GetDocument("rooms", roomID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	general.WriteResponse(w, true, map[string]interface{}{
 		"room": roomData,
