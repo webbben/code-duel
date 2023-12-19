@@ -73,3 +73,29 @@ export async function leaveRoom(roomID: string, token: string): Promise<boolean>
     console.log(`successfully left room ${roomID}`);
     return true;
 }
+
+export async function getProblemList() {
+    const response = await fetch(`${serverURL}/problems`, {
+        method: 'GET',
+    });
+    if (!response.ok) {
+        console.error("failed to load problem list.", response)
+        return [];
+    }
+    const jsonData = await response.json();
+    console.log("Loaded problems: ", jsonData);
+    return jsonData.problems;
+}
+
+export async function getProblem(problemID: string) {
+    const response = await fetch(`${serverURL}/problems/${problemID}`, {
+        method: 'GET',
+    });
+    if (!response.ok) {
+        console.error(`failed to load problem ${problemID}.`, response)
+        return null;
+    }
+    const jsonData = await response.json();
+    console.log("Loaded problem: ", jsonData);
+    return jsonData.problem;
+}
