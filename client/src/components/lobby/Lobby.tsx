@@ -21,6 +21,7 @@ export interface RoomData {
     ReqPassword: boolean,
     Password: string,
     Status: string,
+    InGame: boolean,
     id: string
 }
 

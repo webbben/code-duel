@@ -29,7 +29,8 @@ type Room struct {
 	Difficulty    int      `json:"Difficulty"`    // difficulty of the problems for this room
 	MaxCapacity   int      `json:"MaxCapacity"`   // limit to number of users allowed in room (up to 5)
 	Users         []string `json:"Users"`         // list of users in the room
-	Status        string   `json:"Status"`        // status of the room; if it's waiting, or in game, etc
+	Status        string   `json:"Status"`        // status message of the room; if it's waiting, or in game, etc
+	InGame        bool     `json:"InGame"`        // whether this room is currently in game or not
 	ReqPassword   bool     `json:"ReqPassword"`   // whether this room requires a password to join
 	Password      string   `json:"Password"`      // the password for this room, if applicable
 	GameMode      int      `json:"GameMode"`      // game mode; vs or coop
@@ -38,16 +39,24 @@ type Room struct {
 	Problem       Problem  `json:"Problem"`       // problem to be solved in the game
 }
 
-type Problem struct {
-	ID           string     `json:"id"`
-	Title        string     `json:"Title"`        // title of the problem
-	QuickDesc    string     `json:"QuickDesc"`    // quick description of the problem; seem before starting the game
-	FullDesc     string     `json:"FullDesc"`     // full description; seem once the game has started, and more detailed
-	ExampleCases []TestCase `json:"ExampleCases"` // example test cases shown in the full description, and are simple
-	FullCases    []TestCase `json:"FullCases"`    // larger set of test cases that are run against the solution when submitted
+type ProblemOverview struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Difficulty int    `json:"difficulty"`
+	QuickDesc  string `json:"quickDesc"`
 }
 
-type TestCase struct {
-	Input  any `json:"Input"` // input for a test case
-	Output any `json:"Output"`
+// getter functions for a problem
+type ProblemFunc struct {
+	GetTemplate func(string) string `json:"-"`
 }
+
+type Problem struct {
+	ProblemOverview
+	ProblemFunc
+	FullDesc  string     `json:"fullDesc"`
+	TestCases []TestCase `json:"testCases"`
+	FullCases []TestCase `json:"fullCases"`
+}
+
+type TestCase []any

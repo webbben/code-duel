@@ -9,6 +9,8 @@ import { RootState } from "../../redux/store";
 import { RoomMessage, RoomUpdateTypes, useWebSocket } from "../WebSocketContext";
 import { Link } from "react-router-dom";
 import { routes } from "../../router/router";
+import Game from "./game/Game";
+import { launchGame } from "../../dataProvider";
 
 interface RoomContentProps {
     roomData: RoomData
@@ -21,17 +23,30 @@ export default function RoomContent(props: RoomContentProps) {
     const loggedIn = useAppSelector((state: RootState) => state.userInfo.loggedIn);
     const idToken = useAppSelector((state: RootState) => state.userInfo.idToken);
 
+    // we handle updating the room data in kind of an odd way:
+    // roomData is initialized when the client loads a room's url, using react-router's loader functionality
+    // then, when updates come in through websocket, we manually change roomData
+    // since roomData isn't a state variable, we also keep this timestamp state variable.
+    // it serves to both log the latest websocket update, but crucially also trigger a rerender.
     const [updateTimestamp, setUpdateTimestamp] = useState('');
 
-    const { sendRoomMessage, handleRoomMessage } = useWebSocket();
+    const { handleRoomMessage } = useWebSocket();
+
+    async function handleLaunchGame() {
+        if (!loggedIn || !idToken || !roomData.id) return;
+        const success = await launchGame(roomData.id, idToken);
+        if (!success) {
+            //TODO show feedback to user
+            return;
+        }
+        console.log("launching game...");
+    }
 
     function updateRoomInfo(roomMsg: RoomMessage) {
         if (!roomData) {
             return;
         }
-
         const timestamp = new Date(roomMsg.timestamp).toLocaleTimeString();
-
         const roomUpdate = roomMsg.roomupdate;
         const type = roomUpdate.type;
 
@@ -59,6 +74,10 @@ export default function RoomContent(props: RoomContentProps) {
                 console.log(`user is now ready`);
                 // TODO
                 break;
+            case RoomUpdateTypes.launchGame:
+                console.log("launching game!");
+                roomData.InGame = true;
+                break;
         }
         setUpdateTimestamp(timestamp);
     }
@@ -75,12 +94,24 @@ export default function RoomContent(props: RoomContentProps) {
         };
     }, []);
 
-    console.log(`last update: ${updateTimestamp}`);
+    console.log(`last room update: ${updateTimestamp}`);
+
+    // split off to a new view while in-game
+    // decided to keep this same RoomContent component mounted rather than routing to a new path
+    // so we can keep the existing websocket connection and message handling, rather than having to write a new
+    // version of it just for in-game events.
+    if (roomData.InGame) {
+        return (
+            <Game roomData={roomData} />
+        );
+    }
 
     return (
         <div style={{padding: '20px', height: '100%', display: 'flex', flexDirection: 'row'}}>
             <div className="room_pane">
                 <GameSettings
+                isOwner={username === roomData.Owner}
+                launchGameCallback={handleLaunchGame}
                 mode={roomData.Mode}
                 title={roomData.Title}
                 difficulty={roomData.Difficulty}

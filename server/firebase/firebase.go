@@ -65,20 +65,6 @@ func GetAuthClient() *auth.Client {
 	return authClient
 }
 
-// gets the document at the specified collection, and sets it to the output param
-// the output param should be of the correct type that you expect the data
-//
-// returns an error if anything fails in the process
-func GetDocument(collectionPath string, documentID string) (output interface{}, err error) {
-	ctx := context.Background()
-	snapshot, err := firestoreClient.Collection(collectionPath).Doc(documentID).Get(ctx)
-	if err != nil {
-		return
-	}
-	err = snapshot.DataTo(&output)
-	return
-}
-
 // gets all documents in a given collection
 func GetAllDocsInCollection(collectionPath string) (docs []map[string]interface{}, err error) {
 	collectionRef := firestoreClient.Collection(collectionPath)

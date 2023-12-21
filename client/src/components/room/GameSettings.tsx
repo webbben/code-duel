@@ -1,4 +1,4 @@
-import { Autocomplete, MenuItem, Select, Slider, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import { Autocomplete, Button, MenuItem, Select, Slider, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import "../../styles/Room.css";
 import { getProblemList } from "../../dataProvider";
@@ -9,7 +9,9 @@ interface GameSettingsProps {
     difficulty: number,
     timeLimit?: number,
     problem?: string,
-    updateSettings: Function
+    updateSettings: Function,
+    isOwner: boolean,
+    launchGameCallback: Function
 }
 
 interface ProblemOverview {
@@ -113,6 +115,11 @@ export default function GameSettings(props: GameSettingsProps) {
                     value={problem}
                     />
                     <Typography>{problem?.quickDesc}</Typography>
+                    </div>
+                    }
+                    { props.isOwner &&
+                    <div>
+                        <Button variant="outlined" onClick={() => props.launchGameCallback()}>Launch Game</Button>
                     </div>
                     }
                 </Stack>

@@ -45,6 +45,7 @@ export const RoomUpdateTypes = {
     setUserReady: 'SET_USER_READY',
     userLeave: 'USER_LEAVE',
     userJoin: 'USER_JOIN',
+    launchGame: 'LAUNCH_GAME'
 }
 
 // the types of messages that can be broadcast to other clients in a room

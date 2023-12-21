@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/webbben/code-duel/firebase"
 	authHandlers "github.com/webbben/code-duel/handlers/auth"
+	"github.com/webbben/code-duel/handlers/code"
 	problem_handlers "github.com/webbben/code-duel/handlers/problem"
 	roomHandlers "github.com/webbben/code-duel/handlers/room"
 	userHandlers "github.com/webbben/code-duel/handlers/user"
@@ -45,10 +46,14 @@ func main() {
 	router.HandleFunc("/rooms/{id}", roomHandlers.GetRoomHandler).Methods("GET", "OPTIONS")
 	protectedRouter.HandleFunc("/rooms/{id}/join", roomHandlers.JoinRoomHandler).Methods("POST", "OPTIONS")
 	protectedRouter.HandleFunc("/rooms/{id}/leave", roomHandlers.LeaveRoomHandler).Methods("POST", "OPTIONS")
+	protectedRouter.HandleFunc("/rooms/{id}/launchGame", roomHandlers.LaunchGameRoomHandler).Methods("POST", "OPTIONS")
 
 	// problem API
 	router.HandleFunc("/problems/{id}", problem_handlers.GetProblemHandler).Methods("GET", "OPTIONS")
 	router.HandleFunc("/problems", problem_handlers.GetProblemListHandler).Methods("GET", "OPTIONS")
+
+	// submit code API
+	protectedRouter.HandleFunc("/testCode", code.HandleTestCode).Methods("POST", "OPTIONS")
 
 	// websocket communication
 	router.HandleFunc("/ws", websocket.HandleWebSocketConnection)

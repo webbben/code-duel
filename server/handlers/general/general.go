@@ -3,6 +3,7 @@ package general
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"sync"
 )
@@ -33,6 +34,7 @@ func WriteResponse(w http.ResponseWriter, success bool, response map[string]inte
 	}
 	responseJSON, err := json.Marshal(response)
 	if err != nil {
+		log.Printf("Error marshalling response: %s", err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

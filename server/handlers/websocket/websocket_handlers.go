@@ -213,3 +213,15 @@ func BroadcastUserJoinLeave(username string, roomID string, join bool) {
 	}
 	broadcastMessage(messageToSend, nil)
 }
+
+func BroadcastLaunchGame(roomID string) {
+	messageToSend := Message{
+		Type:      "room_message",
+		Room:      roomID,
+		Timestamp: int(time.Now().UnixMilli()),
+		RoomUpdate: RoomUpdate{
+			Type: "LAUNCH_GAME",
+		},
+	}
+	broadcastMessage(messageToSend, nil)
+}

@@ -12,6 +12,7 @@ import (
 	"github.com/webbben/code-duel/firebase/rooms"
 	authHandlers "github.com/webbben/code-duel/handlers/auth"
 	"github.com/webbben/code-duel/handlers/general"
+	"github.com/webbben/code-duel/handlers/websocket"
 	"github.com/webbben/code-duel/models"
 )
 
@@ -58,7 +59,6 @@ func JoinOrLeaveRoomHandler(w http.ResponseWriter, r *http.Request, join bool) {
 func CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
 	claims, err := authHandlers.GetUserClaimsFromContext(r)
 	if err != nil {
-		fmt.Println(err.Error()) // TODO remove
 		http.Error(w, fmt.Sprintf("Unauthorized: %s", err.Error()), http.StatusUnauthorized)
 		return
 	}
@@ -110,7 +110,7 @@ func GetRoomHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "No room ID found in request vars", http.StatusBadRequest)
 		return
 	}
-	roomData, err := firebase.GetDocument("rooms", roomID)
+	roomData, err := rooms.GetRoom(roomID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -118,4 +118,31 @@ func GetRoomHandler(w http.ResponseWriter, r *http.Request) {
 	general.WriteResponse(w, true, map[string]interface{}{
 		"room": roomData,
 	})
+}
+
+func LaunchGameRoomHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	roomID := vars["id"]
+	if roomID == "" {
+		http.Error(w, "No room ID found in request vars", http.StatusBadRequest)
+		return
+	}
+	// get the user who is sending this request, and confirm they are the room owner
+	claims, err := authHandlers.GetUserClaimsFromContext(r)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Unauthorized: %s", err.Error()), http.StatusUnauthorized)
+		return
+	}
+	room, err := rooms.GetRoom(roomID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Launch game: couldn't get room information: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+	if room.Owner != claims.DisplayName {
+		http.Error(w, "Unauthorized: you are not the owner of this room", http.StatusUnauthorized)
+		return
+	}
+	rooms.SetInGameStatus(roomID, true)
+	websocket.BroadcastLaunchGame(roomID)
+	general.WriteResponse(w, true, nil)
 }

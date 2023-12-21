@@ -4,7 +4,7 @@ import App from "../App";
 import Lobby, { loader as lobbyLoader } from "../components/lobby/Lobby";
 import Signup from "../components/login/Signup";
 import Room, { loader as roomLoader } from "../components/room/Room";
-import Game from "../components/game/Game";
+import Game from "../components/room/game/Game";
 
 export const routes = {
     login: '/login',
@@ -36,10 +36,6 @@ export const router = createBrowserRouter([
                 element: <Room />,
                 loader: roomLoader,
             },
-            {
-                path: `${routes.room}/:roomID/game`,
-                element: <Game />
-            }
         ]
     },
 ]);

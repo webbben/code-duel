@@ -102,3 +102,35 @@ func AddOrRemoveUser(username string, roomID string, add bool) error {
 	}
 	return nil
 }
+
+func GetRoom(roomID string) (*models.Room, error) {
+	ctx := context.Background()
+	firestoreClient := firebase.GetFirestoreClient()
+	snapshot, err := firestoreClient.Collection("rooms").Doc(roomID).Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var room *models.Room
+	err = snapshot.DataTo(&room)
+	if err != nil {
+		fmt.Printf("get room: %s\n", err.Error())
+		return nil, err
+	}
+	return room, nil
+}
+
+func SetInGameStatus(roomID string, InGame bool) error {
+	firestoreClient := firebase.GetFirestoreClient()
+	ctx := context.Background()
+	status := "Waiting"
+	if InGame {
+		status = "In game"
+	}
+	// set the room status message and in-game status marker
+	roomRef := firestoreClient.Collection("rooms").Doc(roomID)
+	_, err := roomRef.Update(ctx, []firestore.Update{
+		{Path: "Status", Value: status},
+		{Path: "InGame", Value: InGame},
+	})
+	return err
+}

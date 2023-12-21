@@ -16,12 +16,17 @@ export async function loader({ params }: { params: Params<"roomID"> }) {
         return null;
     }
     const roomData = await getRoomData(roomID);
+    if (!roomData) return null;
     roomData.id = roomID;
     return roomData;
 }
 
 export default function Room() {
     const roomData = useLoaderData() as RoomData;
+
+    if (!roomData) {
+        return null;
+    }
 
     return (
         <WebSocketProvider roomID={roomData.id}>

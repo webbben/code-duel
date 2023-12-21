@@ -19,7 +19,8 @@ export async function getRoomData(roomID: string) {
         method: 'GET'
     });
     if (!response.ok) {
-        console.error(`failed to load data for room ${roomID}`, response.statusText);
+        const responseText = await response.text()
+        console.error(`failed to load data for room ${roomID}`, response.statusText, responseText);
         return null;
     }
     const json = await response.json();
@@ -98,4 +99,48 @@ export async function getProblem(problemID: string) {
     const jsonData = await response.json();
     console.log("Loaded problem: ", jsonData);
     return jsonData.problem;
+}
+
+export interface codeExecResponse {
+    passCount: number
+    testCount: number
+    errorMessage: string
+}
+
+export async function launchGame(roomID: string, token: string): Promise<boolean> {
+    const response = await fetch(`${serverURL}/protected/rooms/${roomID}/launchGame`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        console.error("Failed to launch game", response.statusText);
+        return false;
+    }
+    const jsonData = await response.json();
+    console.log(jsonData);
+    return true;
+}
+
+export async function testCode(code: string, lang: string, problemID: string): Promise<codeExecResponse | null> {
+    const response = await fetch(`${serverURL}/protected/testCode`, {
+        method: "POST"
+    });
+    if (!response.ok) {
+        console.error("failed to submit code for testing", response);
+        return null
+    }
+    const jsonData = await response.json();
+    const result: codeExecResponse = {
+        passCount: jsonData.passCount,
+        testCount: jsonData.testCount,
+        errorMessage: jsonData.errorMessage
+    };
+    return result;
+}
+
+export async function loadGameRoom(roomID: string) {
+    
 }
