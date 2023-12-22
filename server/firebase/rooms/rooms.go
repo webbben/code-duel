@@ -119,18 +119,12 @@ func GetRoom(roomID string) (*models.Room, error) {
 	return room, nil
 }
 
-func SetInGameStatus(roomID string, InGame bool) error {
-	firestoreClient := firebase.GetFirestoreClient()
-	ctx := context.Background()
-	status := "Waiting"
-	if InGame {
-		status = "In game"
+// set game information in room
+func SetupGameContext(roomID string, problemID string) error {
+	updates := []firestore.Update{
+		{Path: "Status", Value: "In game"},
+		{Path: "InGame", Value: true},
+		{Path: "Problem", Value: problemID},
 	}
-	// set the room status message and in-game status marker
-	roomRef := firestoreClient.Collection("rooms").Doc(roomID)
-	_, err := roomRef.Update(ctx, []firestore.Update{
-		{Path: "Status", Value: status},
-		{Path: "InGame", Value: InGame},
-	})
-	return err
+	return firebase.UpdateDocument("rooms", roomID, updates)
 }

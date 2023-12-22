@@ -11,6 +11,7 @@ interface WebSocketContextType {
     handleChatMessage: (callback: (incomingMessage: ChatMessage) => void) => () => void;
     sendRoomMessage: (roomUpdate: RoomUpdate) => void;
     handleRoomMessage: (callback: (incomingMessage: RoomMessage) => void) => () => void;
+    handleGameMessage: (callback: (incomingMessage: RoomMessage) => void) => () => void;
 }
 export interface ChatMessage {
     type: string,
@@ -29,10 +30,8 @@ export type Message = RoomMessage | ChatMessage;
 
 export interface RoomUpdate {
     type: string,
-    data: {
-        dataToUpdate: string,
-        value: any
-    }
+    /** data will always have a value property, and may have other properties if more context is needed */
+    data: any
 }
 
 // room updates that can be broadcast to other clients in a room
@@ -51,7 +50,8 @@ export const RoomUpdateTypes = {
 // the types of messages that can be broadcast to other clients in a room
 export const messageTypes = {
     chatMessage: 'chat_message',
-    roomMessage: 'room_message'
+    roomMessage: 'room_message',
+    gameMessage: 'game_message'
 }
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
@@ -246,11 +246,42 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
         };
     };
 
+    const handleGameMessage = (callback: (incomingMessage: RoomMessage) => void) => {
+        const listener = (event: MessageEvent) => {
+            const receivedMessage = JSON.parse(event.data);
+            console.log("incoming message", receivedMessage);
+            if (receivedMessage.type !== messageTypes.gameMessage) {
+                return;
+            }
+            const msg: RoomMessage = {
+                type: receivedMessage.type,
+                timestamp: receivedMessage.timestamp,
+                roomupdate: receivedMessage.roomupdate
+            };
+            console.log('Received game message:', receivedMessage, msg);
+            callback(msg);
+        };
+    
+        if (!ws.current) {
+            console.warn("failed to add websocket listener for game messages");
+        }
+        else {
+            ws.current.addEventListener('message', listener);
+            console.log("listening for game messages over websocket");
+        }
+    
+        // Return a cleanup function to unsubscribe when needed
+        return () => {
+            ws.current?.removeEventListener('message', listener);
+        };
+    };
+
     const contextValue: WebSocketContextType = {
         sendChatMessage,
         handleChatMessage,
         sendRoomMessage,
-        handleRoomMessage
+        handleRoomMessage,
+        handleGameMessage
     };
 
     return (

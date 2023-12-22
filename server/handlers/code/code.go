@@ -9,7 +9,9 @@ import (
 	"net/http"
 	"slices"
 
+	authHandlers "github.com/webbben/code-duel/handlers/auth"
 	"github.com/webbben/code-duel/handlers/general"
+	"github.com/webbben/code-duel/handlers/websocket"
 	"github.com/webbben/code-duel/models"
 	problemData "github.com/webbben/code-duel/problem_data"
 )
@@ -23,6 +25,7 @@ type CodeSubmitRequest struct {
 	ProblemID string `json:"problemID"`
 	Lang      string `json:"lang"`
 	Code      string `json:"code"`
+	RoomID    string `json:"roomID"`
 }
 
 type ExecCodeRequest struct {
@@ -31,14 +34,21 @@ type ExecCodeRequest struct {
 }
 
 func HandleTestCode(w http.ResponseWriter, r *http.Request) {
-	// get code, language, and problemID out of body of request
+	// get the user who is sending this request
+	claims, err := authHandlers.GetUserClaimsFromContext(r)
+	if err != nil || claims.DisplayName == "" {
+		http.Error(w, fmt.Sprintf("Unauthorized: %s", err.Error()), http.StatusUnauthorized)
+		return
+	}
+
+	// get code, language, problemID, and roomID out of body of request
 	var req CodeSubmitRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
+	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "Failed to get data from request body", http.StatusBadRequest)
 		return
 	}
-	if req.ProblemID == "" || req.Lang == "" || req.Code == "" {
+	if req.ProblemID == "" || req.Lang == "" || req.Code == "" || req.RoomID == "" {
 		http.Error(w, "Request missing required information", http.StatusBadRequest)
 		return
 	}
@@ -58,6 +68,9 @@ func HandleTestCode(w http.ResponseWriter, r *http.Request) {
 		"testCount":    testCount,
 		"errorMessage": errorMessage,
 	}
+	websocket.UpdateGameState(claims.DisplayName, req.RoomID, "SUBMIT_CODE_RESULT", map[string]interface{}{
+		"passCount": passCount,
+	})
 	general.WriteResponse(w, true, response)
 }
 

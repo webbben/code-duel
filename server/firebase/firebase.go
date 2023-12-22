@@ -92,3 +92,11 @@ func DeleteDocument(collectionPath string, documentID string) (writeResult *fire
 	writeResult, err = firestoreClient.Collection(collectionPath).Doc(documentID).Delete(ctx)
 	return
 }
+
+// updates a document with the given changes
+func UpdateDocument(collectionPath string, documentID string, updates []firestore.Update) error {
+	ctx := context.Background()
+	docRef := firestoreClient.Collection(collectionPath).Doc(documentID)
+	_, err := docRef.Update(ctx, updates)
+	return err
+}

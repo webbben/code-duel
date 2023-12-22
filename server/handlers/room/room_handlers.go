@@ -3,6 +3,7 @@ package roomHandlers
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"sync"
@@ -120,11 +121,32 @@ func GetRoomHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+type LaunchGameRequest struct {
+	ProblemID string `json:"problemID"`
+}
+
 func LaunchGameRoomHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	roomID := vars["id"]
 	if roomID == "" {
 		http.Error(w, "No room ID found in request vars", http.StatusBadRequest)
+		return
+	}
+
+	// get the problem ID the game is using TODO - probably a way to simplify this...
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Error reading request body", http.StatusInternalServerError)
+		return
+	}
+	var requestBody LaunchGameRequest
+	if err := json.Unmarshal(body, &requestBody); err != nil {
+		http.Error(w, "Error decoding JSON", http.StatusBadRequest)
+		return
+	}
+	problemID := requestBody.ProblemID
+	if problemID == "" {
+		http.Error(w, "No problem ID found in request body", http.StatusBadRequest)
 		return
 	}
 	// get the user who is sending this request, and confirm they are the room owner
@@ -142,7 +164,8 @@ func LaunchGameRoomHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized: you are not the owner of this room", http.StatusUnauthorized)
 		return
 	}
-	rooms.SetInGameStatus(roomID, true)
-	websocket.BroadcastLaunchGame(roomID)
+	rooms.SetupGameContext(roomID, problemID)
+	room.Problem = problemID              // add it here so it can be passed to StartGame too
+	go websocket.StartGame(roomID, *room) // start game and notify other users in the room
 	general.WriteResponse(w, true, nil)
 }

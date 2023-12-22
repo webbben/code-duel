@@ -32,9 +32,12 @@ export default function RoomContent(props: RoomContentProps) {
 
     const { handleRoomMessage } = useWebSocket();
 
-    async function handleLaunchGame() {
+    async function handleLaunchGame(problemID: string) {
         if (!loggedIn || !idToken || !roomData.id) return;
-        const success = await launchGame(roomData.id, idToken);
+        if (problemID === "") {
+            return;
+        }
+        const success = await launchGame(roomData.id, problemID, idToken);
         if (!success) {
             //TODO show feedback to user
             return;
@@ -61,11 +64,19 @@ export default function RoomContent(props: RoomContentProps) {
                 console.log(`room difficulty set to ${roomUpdate.data.value}.`);
                 break;
             case RoomUpdateTypes.userJoin:
+                if (!roomData.Users) {
+                    console.warn("room has no user list?");
+                    return;
+                }
                 if (roomData.Users.includes(roomUpdate.data.value)) break;
                 roomData.Users.push(roomUpdate.data.value);
                 console.log(`user ${roomUpdate.data.value} has joined the room.`);
                 break;
             case RoomUpdateTypes.userLeave:
+                if (!roomData.Users) {
+                    console.warn("room has no user list?");
+                    return;
+                }
                 if (!roomData.Users.includes(roomUpdate.data.value)) break;
                 roomData.Users = roomData.Users.filter((user) => user != roomUpdate.data.value);
                 console.log(`user ${roomUpdate.data.value} has left the room.`);

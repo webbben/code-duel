@@ -119,7 +119,7 @@ export default function GameSettings(props: GameSettingsProps) {
                     }
                     { props.isOwner &&
                     <div>
-                        <Button variant="outlined" onClick={() => props.launchGameCallback()}>Launch Game</Button>
+                        <Button disabled={!problem && !randomProblem} variant="outlined" onClick={() => props.launchGameCallback(problem?.id || "")}>Launch Game</Button>
                     </div>
                     }
                 </Stack>

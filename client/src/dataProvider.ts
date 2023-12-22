@@ -107,16 +107,24 @@ export interface codeExecResponse {
     errorMessage: string
 }
 
-export async function launchGame(roomID: string, token: string): Promise<boolean> {
+export async function launchGame(roomID: string, problemID: string, token: string): Promise<boolean> {
+    if (roomID == "" || problemID == "" || token == "") {
+        console.error("launchGame: missing required input params");
+        return false;
+    }
     const response = await fetch(`${serverURL}/protected/rooms/${roomID}/launchGame`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
         },
+        body: JSON.stringify({
+            problemID: problemID
+        })
     });
     if (!response.ok) {
-        console.error("Failed to launch game", response.statusText);
+        const responseText = await response.text()
+        console.error("Failed to launch game", responseText, response.statusText);
         return false;
     }
     const jsonData = await response.json();

@@ -7,6 +7,8 @@ import { PlayArrow } from "@mui/icons-material";
 import { Params, useLoaderData } from "react-router-dom";
 import { getRoomData } from "../../../dataProvider";
 import { RoomData } from "../../lobby/Lobby";
+import ProblemDetails from "./ProblemDetails";
+import { RoomMessage, useWebSocket } from "../../WebSocketContext";
 
 export async function loader({ params }: { params: Params<"roomID"> }) {
     const roomID = params.roomID;
@@ -34,10 +36,35 @@ interface GameProps {
     roomData: RoomData
 }
 
+interface UserProgress {
+    [username: string]: number;
+}
+
 export default function Game(props: GameProps) {
 
     const [lang, setLang] = useState(defaultLang);
     const [code, setCode] = useState<string>("");
+    const [userProgress, setUserProgress] = useState<UserProgress>(() => {
+        // initialize all scores to zero
+        const initialScores: UserProgress = {};
+        props.roomData.Users.forEach((username) => {
+          initialScores[username] = 0;
+        });
+        return initialScores;
+      });
+
+    const { handleGameMessage } = useWebSocket();
+
+    function updateUserProgress(username: string, progress: number) {
+        if (!props.roomData.Users.includes(username)) {
+            console.warn("update user progress: user isn't in this room...");
+            return;
+        }
+        setUserProgress((prevScores) => ({
+            ...prevScores,
+            [username]: progress,
+        }));
+    }
 
     function handleChangeCode(codeString: string | undefined) {
         setCode(codeString || "");
@@ -50,6 +77,32 @@ export default function Game(props: GameProps) {
         }
 
     }
+
+    function updateGameInfo(msg: RoomMessage) {
+        if (!msg.roomupdate || !msg.roomupdate.data) {
+            return;
+        }
+        const roomUpdate = msg.roomupdate;
+
+        // update for a user's progress
+        if (roomUpdate.type == "CODE_SUBMIT_RESULT") {
+            const user = roomUpdate.data.user;
+            const progress = roomUpdate.data.value;
+            updateUserProgress(user, progress);
+        }
+    }
+
+    useEffect(() => {
+        const unsubRoomMessages = handleGameMessage((incomingMessage: RoomMessage) => {
+            console.log("received game update");
+            console.log(incomingMessage);
+            updateGameInfo(incomingMessage);
+        });
+
+        return () => {
+            unsubRoomMessages();
+        };
+    }, []);
 
     useEffect(() => {
         if (lang === "py") {
@@ -66,9 +119,7 @@ export default function Game(props: GameProps) {
     return (
         <div style={{ height: '100%', display: 'flex', flexDirection: 'row', backgroundColor: 'black', paddingRight: '10px', paddingBottom: '10px'}}>
             <div className="room_pane">
-                <div className="game_section" style={{ flex: '1 1 auto', minHeight: '60%'}}>
-                    <Typography>Problem Deets</Typography>
-                </div>
+                <ProblemDetails />
                 <div className="game_section" style={{ flex: '0 1 auto'}}>
                     <Typography>Player Info</Typography>
                 </div>

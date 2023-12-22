@@ -36,7 +36,7 @@ type Room struct {
 	GameMode      int      `json:"GameMode"`      // game mode; vs or coop
 	TimeLimit     int      `json:"TimeLimit"`     // time limit to solve the problem
 	RandomProblem bool     `json:"RandomProblem"` // whether its a random problem (true) or user selects it (false)
-	Problem       Problem  `json:"Problem"`       // problem to be solved in the game
+	Problem       string   `json:"Problem"`       // ID of the problem to solve in game
 }
 
 type ProblemOverview struct {
@@ -56,7 +56,7 @@ type Problem struct {
 	ProblemFunc
 	FullDesc  string     `json:"fullDesc"`
 	TestCases []TestCase `json:"testCases"`
-	FullCases []TestCase `json:"fullCases"`
+	FullCases []TestCase `json:"-"`
 }
 
 type TestCase []any
