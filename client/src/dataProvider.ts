@@ -155,10 +155,12 @@ export async function launchGame(roomID: string, problemID: string, token: strin
  * @param lang language the code is written in
  * @param problemID problem to test code solution against
  * @param token auth token
+ * @param roomID room ID
+ * @param fullSubmit whether we are doing a full submission or not - if not, just basic test cases are done.
  * @returns the result of the code execution, or null if code execution failed to be sent
  */
-export async function testCode(code: string, lang: string, problemID: string, token: string, roomID: string): Promise<codeExecResponse | null> {
-    const response = await fetch(`${serverURL}/protected/testCode`, {
+export async function testCode(code: string, lang: string, problemID: string, token: string, roomID: string, fullSubmit: boolean = false): Promise<codeExecResponse | null> {
+    const response = await fetch(`${serverURL}/protected/${fullSubmit ? "submitCode" : "testCode"}`, {
         method: "POST",
         headers: {
             'Content-Type': 'application/json',

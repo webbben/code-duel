@@ -21,10 +21,9 @@ var problem = models.Problem{
 	},
 	FullCases: []models.TestCase{
 		{"abcdefghijklmnopqrstuvwxyz", "abcdefghijklmnopqrstuvwxyz"},
-		{"1234567890", "1234567890"},
+		{1234567890, "1234567890"},
 		{"ok do we really need to write test cases for this...", "ok do we really need to write test cases for this..."},
-		{true, []string{"true", "True"}}, // make the output a slice to allow for more than one valid output
-		{false, []string{"false", "False"}},
+		{1.1, "1.1"},
 	},
 	ProblemFunc: models.ProblemFunc{
 		GetTemplate: GetProblemTemplate,
@@ -75,7 +74,7 @@ solution () {
 }
 
 # don't change this or your code may not compile correctly!
-solution %d
+solution %s
 `
 
 func GetProblemTemplate(lang string) string {

@@ -56,6 +56,7 @@ func main() {
 
 	// submit code API
 	protectedRouter.HandleFunc("/testCode", code.HandleTestCode).Methods("POST", "OPTIONS")
+	protectedRouter.HandleFunc("/submitCode", code.HandleSubmitCode).Methods("POST", "OPTIONS")
 
 	// websocket communication
 	router.HandleFunc("/ws", websocket.HandleWebSocketConnection)

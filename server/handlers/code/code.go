@@ -39,14 +39,24 @@ type ExecCodeResponse struct {
 	Error  bool   `json:"error"`
 }
 
+// Handles a code test
 func HandleTestCode(w http.ResponseWriter, r *http.Request) {
+	codeSubmission(w, r, false)
+}
+
+// Handles a full code submission
+func HandleSubmitCode(w http.ResponseWriter, r *http.Request) {
+	codeSubmission(w, r, true)
+}
+
+// Handles a code submission request. If a full test, will run against all tests for a problem, not just the basic cases.
+func codeSubmission(w http.ResponseWriter, r *http.Request, fullTest bool) {
 	// get the user who is sending this request
 	claims, err := authHandlers.GetUserClaimsFromContext(r)
 	if err != nil || claims.DisplayName == "" {
 		http.Error(w, fmt.Sprintf("Unauthorized: %s", err.Error()), http.StatusUnauthorized)
 		return
 	}
-
 	// get code, language, problemID, and roomID out of body of request
 	var req CodeSubmitRequest
 	err = json.NewDecoder(r.Body).Decode(&req)
@@ -68,7 +78,12 @@ func HandleTestCode(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Testing code: problem %s not found", req.ProblemID), http.StatusBadRequest)
 		return
 	}
-	passCount, testCount, errorMessage := runTests(req.Code, req.Lang, problem.TestCases)
+	testCases := problem.TestCases
+	if fullTest {
+		testCases = append(testCases, problem.FullCases...)
+	}
+	// run the tests and report the outcome
+	passCount, testCount, errorMessage := runTests(req.Code, req.Lang, testCases)
 	response := map[string]interface{}{
 		"passCount":    passCount,
 		"testCount":    testCount,
@@ -88,7 +103,7 @@ func runTests(code string, lang string, testCases []models.TestCase) (passCount 
 	for _, testCase := range testCases {
 		input, expOut := testCase[0], testCase[1]
 
-		result, err := runTestCase(code, lang, input.(string))
+		result, err := runTestCase(code, lang, input)
 		if err != nil {
 			errorMessage = fmt.Sprintf("Error during execution: %s", err.Error())
 			break

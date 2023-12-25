@@ -9,10 +9,16 @@ import { RoomMessage, useWebSocket } from "../../WebSocketContext";
 import { loadGameRoom, loadProblemTemplate, testCode } from "../../../dataProvider";
 import { Problem, Room } from "../../../dataModels";
 
-const langMap: { [id: string]: string } = {
+const langMapEditor: { [id: string]: string } = {
     "py": "python",
     "go": "go",
     "sh": "shell"
+};
+
+const langMapServer: { [id: string]: string } = {
+    "py": "python",
+    "go": "go",
+    "sh": "bash"
 };
 
 const defaultLang = "py";
@@ -76,7 +82,7 @@ export default function Game(props: GameProps) {
             console.warn("there's no code to test");
             return;
         }
-        const testResults = await testCode(code, langMap[lang], problemID, props.token, props.roomData.id);
+        const testResults = await testCode(code, langMapServer[lang], problemID, props.token, props.roomData.id, true);
         console.log("test results: ", testResults);
     }
 
@@ -159,7 +165,7 @@ export default function Game(props: GameProps) {
                     <div style={{ flex: '1 1 auto'}}>
                     <Editor 
                     height={'100%'} 
-                    language={langMap[lang]} 
+                    language={langMapEditor[lang]} 
                     value={code} 
                     onChange={(s, _ev) => handleChangeCode(s)}
                     theme='vs-dark' />
