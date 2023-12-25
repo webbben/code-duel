@@ -2,9 +2,9 @@ import { Circle } from "@mui/icons-material";
 import { Chip, Grid, ListItem, Typography } from "@mui/material";
 import React from "react";
 import DiffLabel from "./DiffLabel";
-import { RoomData } from "./Lobby";
+import { Room } from "../../dataModels";
 
-interface RoomRowProps extends RoomData {
+interface RoomRowProps extends Room {
     selectRoom: Function,
     isSelected: boolean,
     id: string

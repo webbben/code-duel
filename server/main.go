@@ -47,9 +47,11 @@ func main() {
 	protectedRouter.HandleFunc("/rooms/{id}/join", roomHandlers.JoinRoomHandler).Methods("POST", "OPTIONS")
 	protectedRouter.HandleFunc("/rooms/{id}/leave", roomHandlers.LeaveRoomHandler).Methods("POST", "OPTIONS")
 	protectedRouter.HandleFunc("/rooms/{id}/launchGame", roomHandlers.LaunchGameRoomHandler).Methods("POST", "OPTIONS")
+	protectedRouter.HandleFunc("/rooms/{id}/game", roomHandlers.LoadGameHandler).Methods("GET", "OPTIONS")
 
 	// problem API
 	router.HandleFunc("/problems/{id}", problem_handlers.GetProblemHandler).Methods("GET", "OPTIONS")
+	router.HandleFunc("/problems/{id}/template/{lang}", problem_handlers.GetProblemTemplate).Methods("GET", "OPTIONS")
 	router.HandleFunc("/problems", problem_handlers.GetProblemListHandler).Methods("GET", "OPTIONS")
 
 	// submit code API

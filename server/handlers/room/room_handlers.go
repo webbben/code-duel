@@ -15,6 +15,7 @@ import (
 	"github.com/webbben/code-duel/handlers/general"
 	"github.com/webbben/code-duel/handlers/websocket"
 	"github.com/webbben/code-duel/models"
+	problemData "github.com/webbben/code-duel/problem_data"
 )
 
 var (
@@ -168,4 +169,29 @@ func LaunchGameRoomHandler(w http.ResponseWriter, r *http.Request) {
 	room.Problem = problemID              // add it here so it can be passed to StartGame too
 	go websocket.StartGame(roomID, *room) // start game and notify other users in the room
 	general.WriteResponse(w, true, nil)
+}
+
+func LoadGameHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	roomID := vars["id"]
+	if roomID == "" {
+		http.Error(w, "No room ID found in request vars", http.StatusBadRequest)
+		return
+	}
+	// load the problem for this room
+	room, err := rooms.GetRoom(roomID)
+	if err != nil {
+		http.Error(w, "Failed to get room data", http.StatusInternalServerError)
+		return
+	}
+	problemID := room.Problem
+	problem := problemData.GetProblemByID(problemID)
+	if &problem == nil {
+		http.Error(w, "Failed to get problem data", http.StatusInternalServerError)
+		return
+	}
+	// send problem info to client
+	general.WriteResponse(w, true, map[string]interface{}{
+		"problem": problem,
+	})
 }

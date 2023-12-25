@@ -26,6 +26,9 @@ var problem = models.Problem{
 		{true, []string{"true", "True"}}, // make the output a slice to allow for more than one valid output
 		{false, []string{"false", "False"}},
 	},
+	ProblemFunc: models.ProblemFunc{
+		GetTemplate: GetProblemTemplate,
+	},
 }
 
 func GetOverview() models.ProblemOverview {
@@ -43,51 +46,49 @@ func GetProblem() models.Problem {
  * ====================================================================
  */
 
+var goTemplate = `
+package main
+
+import "fmt"
+
+func main() {
+	// don't change this or your code may not compile correctly!
+	solution(%s)
+}
+
+func solution(input any) {
+	// write your solution here
+}
+`
+
+var pythonTemplate = `
+def solution(input):
+	# write your solution here
+
+# don't change this or your code may not compile correctly!
+solution(%s)
+`
+
+var bashTemplate = `
+solution () {
+	# write your solution here
+}
+
+# don't change this or your code may not compile correctly!
+solution %d
+`
+
 func GetProblemTemplate(lang string) string {
 	switch lang {
 	case "go":
-		return goTemplate()
+		return goTemplate
+	case "py":
+		return pythonTemplate
+	case "sh":
+		return bashTemplate
 	default:
 		return ""
 	}
-}
-
-// go template
-func goTemplate() string {
-	template := `
-		package main
-
-		import "fmt"
-
-		func main() {
-			// don't change this or your code may not compile correctly!
-			solution(%d)
-		}
-
-		func solution(input any) {
-			// write your solution here
-		}
-	`
-	return template
-}
-
-// python template
-func pythonTemplate() string {
-	template := `
-		def solution(input) {
-			// write your solution here
-		}
-
-		// don't change this or your code may not compile correctly!
-		solution(%d)
-	`
-	return template
-}
-
-// bash template
-func bashTemplate() string {
-	// TODO
-	return ""
 }
 
 /*

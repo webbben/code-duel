@@ -1,11 +1,10 @@
-import { Autocomplete, Button, MenuItem, Select, Slider, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import { Autocomplete, Button, Slider, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import "../../styles/Room.css";
 import { getProblemList } from "../../dataProvider";
 
 interface GameSettingsProps {
     title: string,
-    mode: number,
     difficulty: number,
     timeLimit?: number,
     problem?: string,
@@ -24,8 +23,6 @@ interface ProblemOverview {
 const diffMap = ["Easy", "Med", "Hard"];
 
 export default function GameSettings(props: GameSettingsProps) {
-
-    const [mode, setMode] = useState<number>(props.mode);
     const [diff, setDiff] = useState<number>(props.difficulty);
     const [randomProblem, setRandomProblem] = useState<boolean>(true);
     const [problem, setProblem] = useState<ProblemOverview | null>(null);
@@ -53,17 +50,6 @@ export default function GameSettings(props: GameSettingsProps) {
             <Typography gutterBottom variant="h6">{props.title || "loading"}</Typography>
             <div style={{ textAlign: 'left' }}>
                 <Stack spacing={2}>
-                    <div className="_flexRow">
-                        <Typography marginRight={1}>Game Mode: </Typography>
-                        <ToggleButtonGroup
-                        color="primary"
-                        value={mode}
-                        exclusive
-                        onChange={(_e, v) => setMode(v)}>
-                            <ToggleButton value={1}>Vs</ToggleButton>
-                            <ToggleButton value={2}>Co-op</ToggleButton>
-                        </ToggleButtonGroup>
-                    </div>
                     <div className="_flexRow">
                         <Typography marginRight={1}>Difficulty: </Typography>
                         <ToggleButtonGroup

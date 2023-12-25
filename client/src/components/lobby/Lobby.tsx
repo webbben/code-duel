@@ -10,31 +10,16 @@ import { getRoomList, joinRoom } from "../../dataProvider";
 import { useLoaderData, useNavigate, useRevalidator } from "react-router-dom";
 import { routes } from "../../router/router";
 import { Refresh } from "@mui/icons-material";
-
-export interface RoomData {
-    Title: string,
-    Owner: string,
-    Difficulty: number,
-    Mode: number,
-    Users: string[]
-    MaxCapacity: number,
-    ReqPassword: boolean,
-    Password: string,
-    Status: string,
-    InGame: boolean,
-    id: string
-}
+import { Room } from "../../dataModels";
 
 export async function loader() {
     const roomList = await getRoomList();
     return roomList;
 }
 
-
-
 export default function Lobby() {
 
-    const rooms = useLoaderData() as RoomData[];
+    const rooms = useLoaderData() as Room[];
     const [selectedRoom, setSelectedRoom] = useState('');
 
     const loggedIn = useAppSelector((state: RootState) => state.userInfo.loggedIn);

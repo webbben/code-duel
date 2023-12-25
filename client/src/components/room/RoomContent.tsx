@@ -3,7 +3,6 @@ import GameSettings from "./GameSettings";
 import RoomMembers from "./RoomMembers";
 import ChatPane from "./ChatPane";
 import { Alert, Snackbar } from "@mui/material";
-import { RoomData } from "../lobby/Lobby";
 import { useAppSelector } from "../../redux/hooks";
 import { RootState } from "../../redux/store";
 import { RoomMessage, RoomUpdateTypes, useWebSocket } from "../WebSocketContext";
@@ -11,9 +10,10 @@ import { Link } from "react-router-dom";
 import { routes } from "../../router/router";
 import Game from "./game/Game";
 import { launchGame } from "../../dataProvider";
+import { Room } from "../../dataModels";
 
 interface RoomContentProps {
-    roomData: RoomData
+    roomData: Room
 }
 
 export default function RoomContent(props: RoomContentProps) {
@@ -113,7 +113,7 @@ export default function RoomContent(props: RoomContentProps) {
     // version of it just for in-game events.
     if (roomData.InGame) {
         return (
-            <Game roomData={roomData} />
+            <Game roomData={roomData} token={idToken || ""} username={username || ""} />
         );
     }
 
@@ -123,7 +123,6 @@ export default function RoomContent(props: RoomContentProps) {
                 <GameSettings
                 isOwner={username === roomData.Owner}
                 launchGameCallback={handleLaunchGame}
-                mode={roomData.Mode}
                 title={roomData.Title}
                 difficulty={roomData.Difficulty}
                 updateSettings={() => console.log('hi')} />

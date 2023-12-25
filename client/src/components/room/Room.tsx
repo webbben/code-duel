@@ -2,8 +2,8 @@ import React from "react";
 import { Params, useLoaderData } from "react-router-dom";
 import { getRoomData } from "../../dataProvider";
 import { WebSocketProvider } from "../WebSocketContext";
-import { RoomData } from "../lobby/Lobby";
 import RoomContent from "./RoomContent";
+import { Room as RoomData } from "../../dataModels";
 
 // 
 // A wrapper for RoomContent, since we need to load WebSocketProvider before its hooks are able to be used.

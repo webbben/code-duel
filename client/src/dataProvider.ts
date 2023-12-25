@@ -1,7 +1,13 @@
+import { Problem, Room } from "./dataModels";
+
 /** URL where our server API endpoints can be accessed */
 export const serverURL = 'http://localhost:8080';
 
-export async function getRoomList() {
+/**
+ * Gets the list of rooms - used in the lobby for listing all rooms a user can join.
+ * @returns list of Rooms
+ */
+export async function getRoomList(): Promise<Room[]> {
     const response = await fetch(`${serverURL}/rooms`, {
         method: 'GET',
     });
@@ -14,20 +20,11 @@ export async function getRoomList() {
     return json.rooms;
 }
 
-export async function getRoomData(roomID: string) {
-    const response = await fetch(`${serverURL}/rooms/${roomID}`, {
-        method: 'GET'
-    });
-    if (!response.ok) {
-        const responseText = await response.text()
-        console.error(`failed to load data for room ${roomID}`, response.statusText, responseText);
-        return null;
-    }
-    const json = await response.json();
-    console.log(`Loaded room ${roomID}`, json);
-    return json.room;
-}
-
+/**
+ * Verifies that a given authentication token is valid.  Can be used as an extra layer of user authentication.
+ * @param token auth token
+ * @returns true if the token is authenticated, false if not
+ */
 export async function verifyToken(token: string): Promise<boolean> {
     const response = await fetch(`${serverURL}/verifyToken`, {
         method: 'POST',
@@ -41,6 +38,22 @@ export async function verifyToken(token: string): Promise<boolean> {
         return false;
     }
     return true;
+}
+
+//#region room
+
+export async function getRoomData(roomID: string) {
+    const response = await fetch(`${serverURL}/rooms/${roomID}`, {
+        method: 'GET'
+    });
+    if (!response.ok) {
+        const responseText = await response.text()
+        console.error(`failed to load data for room ${roomID}`, response.statusText, responseText);
+        return null;
+    }
+    const json = await response.json();
+    console.log(`Loaded room ${roomID}`, json);
+    return json.room;
 }
 
 export async function joinRoom(roomID: string, token: string): Promise<boolean> {
@@ -101,6 +114,10 @@ export async function getProblem(problemID: string) {
     return jsonData.problem;
 }
 
+//#endregion
+
+//#region game
+
 export interface codeExecResponse {
     passCount: number
     testCount: number
@@ -132,12 +149,31 @@ export async function launchGame(roomID: string, problemID: string, token: strin
     return true;
 }
 
-export async function testCode(code: string, lang: string, problemID: string): Promise<codeExecResponse | null> {
+/**
+ * Tests code against the basic test cases for a problem
+ * @param code code solution to be tested
+ * @param lang language the code is written in
+ * @param problemID problem to test code solution against
+ * @param token auth token
+ * @returns the result of the code execution, or null if code execution failed to be sent
+ */
+export async function testCode(code: string, lang: string, problemID: string, token: string, roomID: string): Promise<codeExecResponse | null> {
     const response = await fetch(`${serverURL}/protected/testCode`, {
-        method: "POST"
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+            problemID: problemID,
+            code: code,
+            lang: lang,
+            roomID: roomID
+        })
     });
     if (!response.ok) {
-        console.error("failed to submit code for testing", response);
+        const responseText = await response.text();
+        console.error("failed to submit code for testing", responseText);
         return null
     }
     const jsonData = await response.json();
@@ -149,6 +185,40 @@ export async function testCode(code: string, lang: string, problemID: string): P
     return result;
 }
 
-export async function loadGameRoom(roomID: string) {
-    
+/**
+ * Loads the problem to be solved for a game
+ * @param roomID 
+ * @param token 
+ * @returns Problem
+ */
+export async function loadGameRoom(roomID: string, token: string): Promise<Problem | null> {
+    const response = await fetch(`${serverURL}/protected/rooms/${roomID}/game`, {
+        method: "GET",
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        }
+    });
+    if (!response.ok) {
+        const responseText = await response.text();
+        console.error("failed to load problem for game", responseText, response);
+        return null
+    }
+    const jsonData = await response.json();
+    return jsonData.problem;
 }
+
+export async function loadProblemTemplate(problemID: string, lang: string): Promise<string | null> {
+    const response = await fetch(`${serverURL}/problems/${problemID}/template/${lang}`, {
+        method: "GET",
+    });
+    if (!response.ok) {
+        const responseText = await response.text();
+        console.error("failed to load code template", responseText, response);
+        return null
+    }
+    const jsonData = await response.json();
+    return jsonData.template;
+}
+
+//#endregion

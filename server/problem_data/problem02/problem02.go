@@ -25,6 +25,9 @@ var problem = models.Problem{
 		{[]int{6, 4, 7, 9, 4, 3, 5, 6, 8, 6, 4, 3, 5, 6, 8, 9, 7, 5, 4, 3, 4, 6, 7, 9, 7, 5, 34, 23, 4, 5, 7, 8, 9, 7, 5, 4, 3, 24, 5, 7, 3, 2, 4, 6, 0, 90}, 90},
 		{[]int{345, 567, 234, 678, 534, 654, 423, 765, 321, 654, 423, 987, 765, 543, 47, 532, 98, 12, 54, 987, 234, 567}, 975},
 	},
+	ProblemFunc: models.ProblemFunc{
+		GetTemplate: GetProblemTemplate,
+	},
 }
 
 func GetOverview() models.ProblemOverview {
@@ -42,49 +45,48 @@ func GetProblem() models.Problem {
  * ====================================================================
  */
 
+var pythonTemplate = `
+def solution(stockPrices):
+	# write your solution here
+
+# don't change this or your code may not compile correctly!
+solution(%d)
+`
+
+var goTemplate = `
+package main
+
+import "fmt"
+
+func main() {
+	// don't change this or your code may not compile correctly!
+	fmt.Print(solution(%d))
+}
+
+func solution(stockPrices []int) int {
+	// write your solution here
+}
+`
+
+var bashTemplate = `
+solution () {
+	# write your solution here
+	stockPrices=$1
+}
+
+# don't change this or your code may not compile correctly!
+solution %d
+`
+
 func GetProblemTemplate(lang string) string {
 	switch lang {
 	case "go":
-		return goTemplate()
+		return goTemplate
+	case "py":
+		return pythonTemplate
+	case "sh":
+		return bashTemplate
 	default:
 		return ""
 	}
-}
-
-// go template
-func goTemplate() string {
-	template := `
-		package main
-
-		import "fmt"
-
-		func main() {
-			// don't change this or your code may not compile correctly!
-			fmt.Print(solution(%d))
-		}
-
-		func solution(stockPrices []int) {
-			// write your solution here
-		}
-	`
-	return template
-}
-
-// python template
-func pythonTemplate() string {
-	template := `
-		def solution(stockPrices) {
-			// write your solution here
-		}
-
-		// don't change this or your code may not compile correctly!
-		solution(%d)
-	`
-	return template
-}
-
-// bash template
-func bashTemplate() string {
-	// TODO
-	return ""
 }

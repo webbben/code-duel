@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
+	"log"
 	"net/http"
+	"reflect"
 	"slices"
 
 	authHandlers "github.com/webbben/code-duel/handlers/auth"
@@ -31,6 +32,11 @@ type CodeSubmitRequest struct {
 type ExecCodeRequest struct {
 	Lang string `json:"lang"`
 	Code string `json:"code"`
+}
+
+type ExecCodeResponse struct {
+	Output string `json:"output"`
+	Error  bool   `json:"error"`
 }
 
 func HandleTestCode(w http.ResponseWriter, r *http.Request) {
@@ -82,11 +88,12 @@ func runTests(code string, lang string, testCases []models.TestCase) (passCount 
 	for _, testCase := range testCases {
 		input, expOut := testCase[0], testCase[1]
 
-		result, err := runTestCase(code, lang, input.(string), expOut.(string))
+		result, err := runTestCase(code, lang, input.(string))
 		if err != nil {
 			errorMessage = fmt.Sprintf("Error during execution: %s", err.Error())
 			break
 		}
+		log.Printf("Output: [%s] Expected: [%s]\n", result, expOut)
 		if result != expOut {
 			errorMessage = fmt.Sprintf("Failed test case [%s]: Result [%s] Expected [%s]", input, result, expOut)
 			break
@@ -96,12 +103,14 @@ func runTests(code string, lang string, testCases []models.TestCase) (passCount 
 	return
 }
 
-func runTestCase(code string, lang string, input string, expOut string) (string, error) {
-	codeWithInput := fmt.Sprintf(code, input)
+func runTestCase(code string, lang string, input any) (string, error) {
+	inputFmt := formatInput(lang, input)
+	codeWithInput := fmt.Sprintf(code, inputFmt)
 	reqBody := map[string]interface{}{
 		"lang": lang,
 		"code": codeWithInput,
 	}
+	log.Printf("Running test for %s code...", lang)
 	// make request to code execution service
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
@@ -112,12 +121,106 @@ func runTestCase(code string, lang string, input string, expOut string) (string,
 		return "", errors.New("Internal server error: failed to communicate with code execution service")
 	}
 	// read response
-	defer response.Body.Close()
-	body, err := io.ReadAll(response.Body)
+	var execCodeResponse ExecCodeResponse
+	err = json.NewDecoder(response.Body).Decode(&execCodeResponse)
 	if err != nil {
 		return "", errors.New("Internal server error: failed to read executed code response body")
 	}
-	return string(body), nil
+	if execCodeResponse.Error {
+		return "", errors.New(execCodeResponse.Output)
+	}
+	log.Printf("... result: %s", execCodeResponse.Output)
+	return execCodeResponse.Output, nil
+}
+
+// formats the input value to the correct format for the given language
+func formatInput(lang string, input any) string {
+	switch lang {
+	case "go":
+		// go has built in support for this!
+		return fmt.Sprintf("%#v", input)
+	case "python":
+		return formatPython(input)
+	case "bash":
+		return formatBash(input)
+	default:
+		// default to putting it in quotes like a string
+		return fmt.Sprintf("\"%s\"", input)
+	}
+}
+
+func formatPython(input any) string {
+	inputType := reflect.TypeOf(input)
+	inputValue := reflect.ValueOf(input)
+	kind := inputType.Kind()
+
+	// input is array/slice, so format its individual elements
+	if kind == reflect.Array || kind == reflect.Slice {
+		inputFmt := "["
+		for i := 0; i < inputValue.Len(); i++ {
+			element := inputValue.Index(i).Interface()
+			inputFmt += formatPython(element)
+			if i < inputValue.Len()-1 {
+				inputFmt += ","
+			}
+		}
+		inputFmt += "]"
+		return inputFmt
+	}
+	// input is string
+	if kind == reflect.String {
+		return fmt.Sprintf("\"%s\"", input)
+	}
+	// input is boolean
+	if kind == reflect.Bool {
+		boolVal := inputValue.Bool()
+		if boolVal {
+			return "True"
+		}
+		return "False"
+	}
+	// input is number
+	if kind == reflect.Int || kind == reflect.Int64 || kind == reflect.Float64 {
+		return fmt.Sprintf("%v", input)
+	}
+	return fmt.Sprintf("%s", input)
+}
+
+func formatBash(input any) string {
+	inputType := reflect.TypeOf(input)
+	inputValue := reflect.ValueOf(input)
+	kind := inputType.Kind()
+
+	// input is array/slice, so format its individual elements
+	if kind == reflect.Array || kind == reflect.Slice {
+		inputFmt := "["
+		for i := 0; i < inputValue.Len(); i++ {
+			element := inputValue.Index(i).Interface()
+			inputFmt += formatBash(element)
+			if i < inputValue.Len()-1 {
+				inputFmt += " "
+			}
+		}
+		inputFmt += "]"
+		return inputFmt
+	}
+	// input is string
+	if kind == reflect.String {
+		return fmt.Sprintf("\"%s\"", input)
+	}
+	// input is boolean
+	if kind == reflect.Bool {
+		boolVal := inputValue.Bool()
+		if boolVal {
+			return "true"
+		}
+		return "false"
+	}
+	// input is number
+	if kind == reflect.Int || kind == reflect.Int64 || kind == reflect.Float64 {
+		return fmt.Sprintf("%v", input)
+	}
+	return fmt.Sprintf("%s", input)
 }
 
 func HandleGetCodeTemplate(w http.ResponseWriter, r *http.Request) {

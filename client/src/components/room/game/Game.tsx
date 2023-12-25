@@ -4,22 +4,10 @@ import '../../../styles/Room.css';
 import '../../../styles/Game.css';
 import { useEffect, useState } from "react";
 import { PlayArrow } from "@mui/icons-material";
-import { Params, useLoaderData } from "react-router-dom";
-import { getRoomData } from "../../../dataProvider";
-import { RoomData } from "../../lobby/Lobby";
 import ProblemDetails from "./ProblemDetails";
 import { RoomMessage, useWebSocket } from "../../WebSocketContext";
-
-export async function loader({ params }: { params: Params<"roomID"> }) {
-    const roomID = params.roomID;
-    if (!roomID) {
-        console.error('no room ID found in URL params');
-        return null;
-    }
-    const roomData = await getRoomData(roomID);
-    roomData.id = roomID;
-    return roomData;
-}
+import { loadGameRoom, loadProblemTemplate, testCode } from "../../../dataProvider";
+import { Problem, Room } from "../../../dataModels";
 
 const langMap: { [id: string]: string } = {
     "py": "python",
@@ -28,12 +16,11 @@ const langMap: { [id: string]: string } = {
 };
 
 const defaultLang = "py";
-const defaultPyCode = "# write code here";
-const defaultBashCode = "# write code here";
-const defaultGoCode = "package main\n\n// write code here\nfunc main() {\n}\n";
 
 interface GameProps {
-    roomData: RoomData
+    roomData: Room
+    token: string
+    username: string
 }
 
 interface UserProgress {
@@ -44,10 +31,24 @@ export default function Game(props: GameProps) {
 
     const [lang, setLang] = useState(defaultLang);
     const [code, setCode] = useState<string>("");
+    const [problem, setProblem] = useState<Problem | null>(null);
+
+    // define the problem ID here since there are technically two places the problem ID could be retrieved from
+    // TODO redo logic on getting problem/problem ID for room?
+    const problemID: string = problem ? problem.id : (props.roomData ? props.roomData.Problem : "");
+    if (problemID === "") {
+        console.warn("no problem ID found for game!");
+    }
+    if (problem && props.roomData) {
+        if (problem.id !== props.roomData.Problem) {
+            console.warn("problem ID on problem object doesn't match problem ID on room object?", `problem obj: ${problem.id}`, `room obj: ${props.roomData.Problem}`);
+        }
+    }
+
     const [userProgress, setUserProgress] = useState<UserProgress>(() => {
         // initialize all scores to zero
         const initialScores: UserProgress = {};
-        props.roomData.Users.forEach((username) => {
+        props.roomData?.Users?.forEach((username) => {
           initialScores[username] = 0;
         });
         return initialScores;
@@ -70,12 +71,13 @@ export default function Game(props: GameProps) {
         setCode(codeString || "");
     }
 
-    function testCode() {
+    async function runTestCases() {
         if (code === "") {
             console.warn("there's no code to test");
             return;
         }
-
+        const testResults = await testCode(code, langMap[lang], problemID, props.token, props.roomData.id);
+        console.log("test results: ", testResults);
     }
 
     function updateGameInfo(msg: RoomMessage) {
@@ -92,36 +94,51 @@ export default function Game(props: GameProps) {
         }
     }
 
+    async function loadProblem() {
+        const problemData = await loadGameRoom(props.roomData.id, props.token);
+        console.log("game problem: ", problemData);
+        setProblem(problemData);
+    }
+
+    async function loadCodeTemplate() {
+        const template = await loadProblemTemplate(problemID, lang);
+        setCode(template || "");
+    }
+
+    // handle first time loading actions
     useEffect(() => {
+        // sub to game messages
         const unsubRoomMessages = handleGameMessage((incomingMessage: RoomMessage) => {
             console.log("received game update");
             console.log(incomingMessage);
             updateGameInfo(incomingMessage);
         });
 
+        // load data for game
+        loadProblem();
+        loadCodeTemplate();
+
         return () => {
             unsubRoomMessages();
         };
     }, []);
 
+    // reload code template if language changes
     useEffect(() => {
-        if (lang === "py") {
-            setCode(defaultPyCode);
-        }
-        if (lang === "go") {
-            setCode(defaultGoCode);
-        }
-        if (lang === "sh") {
-            setCode(defaultBashCode);
-        }
+        loadCodeTemplate();
     }, [lang]);
 
     return (
         <div style={{ height: '100%', display: 'flex', flexDirection: 'row', backgroundColor: 'black', paddingRight: '10px', paddingBottom: '10px'}}>
             <div className="room_pane">
-                <ProblemDetails />
+                <ProblemDetails problem={problem} />
                 <div className="game_section" style={{ flex: '0 1 auto'}}>
                     <Typography>Player Info</Typography>
+                    { props.roomData?.Users?.map((user: string) => {
+                        return (
+                            <Typography>{`${user} | progress: ${userProgress[user]}`}</Typography>
+                        )
+                    })}
                 </div>
             </div>
             <div className="room_pane">
@@ -150,7 +167,7 @@ export default function Game(props: GameProps) {
                 </div>
                 <div className="game_section" style={{ flex: '0 1 auto'}}>
                     <Typography>Test results</Typography>
-                    <IconButton onClick={() => testCode()}>
+                    <IconButton onClick={() => runTestCases()}>
                         <PlayArrow />
                     </IconButton>
                 </div>
