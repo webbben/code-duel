@@ -20,9 +20,9 @@ export default function ProblemDetails(props: ProblemDetailsProps) {
             <Typography gutterBottom variant='h5'>{props.problem.name}</Typography>
             <Typography gutterBottom variant='body1'>{props.problem.fullDesc}</Typography>
             <Typography gutterBottom variant='h6'>Examples</Typography>
-            { props.problem.testCases?.map((testCase) => {
+            { props.problem.testCases?.map((testCase, i) => {
                 return (
-                    <Typography>{`${testCase[0]}  =>  ${testCase[1]}`}</Typography>
+                    <Typography key={`testcase${i}`}>{`${testCase[0]}  =>  ${testCase[1]}`}</Typography>
                 )
             })}
         </div>

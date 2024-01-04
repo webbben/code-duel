@@ -30,7 +30,6 @@ export default function Login() {
         signInWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
             const user = userCredential.user;
-            console.log('user logged in', user);
             return user.getIdToken();
         })
         // verify the token on our server too, as an extra security measure
@@ -47,8 +46,6 @@ export default function Login() {
                     throw new Error("Token verification failed.");
                 }
                 const json = await response.json();
-                console.log('Token verification successful!');
-                console.log(json);
                 dispatch(setUserInfo({
                     username: json.username,
                     email: email,

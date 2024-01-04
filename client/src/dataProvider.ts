@@ -16,7 +16,6 @@ export async function getRoomList(): Promise<Room[]> {
         return [];
     }
     const json = await response.json()
-    console.log('Loaded rooms', json);
     return json.rooms;
 }
 
@@ -52,7 +51,6 @@ export async function getRoomData(roomID: string) {
         return null;
     }
     const json = await response.json();
-    console.log(`Loaded room ${roomID}`, json);
     return json.room;
 }
 
@@ -68,7 +66,6 @@ export async function joinRoom(roomID: string, token: string): Promise<boolean> 
         console.error(`failed to join room ${roomID}`, response.statusText);
         return false;
     }
-    console.log(`successfully joined room ${roomID}`);
     return true;
 }
 
@@ -84,7 +81,6 @@ export async function leaveRoom(roomID: string, token: string): Promise<boolean>
         console.error(`failed to leave room ${roomID}`, response.statusText);
         return false;
     }
-    console.log(`successfully left room ${roomID}`);
     return true;
 }
 
@@ -97,7 +93,6 @@ export async function getProblemList() {
         return [];
     }
     const jsonData = await response.json();
-    console.log("Loaded problems: ", jsonData);
     return jsonData.problems;
 }
 
@@ -110,7 +105,6 @@ export async function getProblem(problemID: string) {
         return null;
     }
     const jsonData = await response.json();
-    console.log("Loaded problem: ", jsonData);
     return jsonData.problem;
 }
 
@@ -211,6 +205,10 @@ export async function loadGameRoom(roomID: string, token: string): Promise<Probl
 }
 
 export async function loadProblemTemplate(problemID: string, lang: string): Promise<string | null> {
+    if (!problemID || !lang) {
+        console.error("loadProblemTemplate: missing required params", problemID, lang);
+        return null;
+    }
     const response = await fetch(`${serverURL}/problems/${problemID}/template/${lang}`, {
         method: "GET",
     });

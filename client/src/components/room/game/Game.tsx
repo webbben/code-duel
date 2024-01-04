@@ -6,8 +6,9 @@ import { useEffect, useState } from "react";
 import { PlayArrow } from "@mui/icons-material";
 import ProblemDetails from "./ProblemDetails";
 import { RoomMessage, useWebSocket } from "../../WebSocketContext";
-import { loadGameRoom, loadProblemTemplate, testCode } from "../../../dataProvider";
+import { codeExecResponse, loadGameRoom, loadProblemTemplate, testCode } from "../../../dataProvider";
 import { Problem, Room } from "../../../dataModels";
+import TestResults from "./TestResults";
 
 const langMapEditor: { [id: string]: string } = {
     "py": "python",
@@ -38,6 +39,7 @@ export default function Game(props: GameProps) {
     const [lang, setLang] = useState(defaultLang);
     const [code, setCode] = useState<string>("");
     const [problem, setProblem] = useState<Problem | null>(null);
+    const [lastTestResult, setLastTestResult] = useState<codeExecResponse>();
 
     // define the problem ID here since there are technically two places the problem ID could be retrieved from
     // TODO redo logic on getting problem/problem ID for room?
@@ -102,7 +104,6 @@ export default function Game(props: GameProps) {
 
     async function loadProblem() {
         const problemData = await loadGameRoom(props.roomData.id, props.token);
-        console.log("game problem: ", problemData);
         setProblem(problemData);
     }
 
@@ -142,7 +143,7 @@ export default function Game(props: GameProps) {
                     <Typography>Player Info</Typography>
                     { props.roomData?.Users?.map((user: string) => {
                         return (
-                            <Typography>{`${user} | progress: ${userProgress[user]}`}</Typography>
+                            <Typography key={user}>{`${user} | progress: ${userProgress[user]}`}</Typography>
                         )
                     })}
                 </div>
@@ -171,12 +172,10 @@ export default function Game(props: GameProps) {
                     theme='vs-dark' />
                     </div>
                 </div>
-                <div className="game_section" style={{ flex: '0 1 auto'}}>
-                    <Typography>Test results</Typography>
-                    <IconButton onClick={() => runTestCases()}>
-                        <PlayArrow />
-                    </IconButton>
-                </div>
+                <TestResults 
+                runTestsCallback={runTestCases} 
+                codeExecResult={lastTestResult} 
+                testCases={problem?.testCases} />
             </div>
         </div>
     );

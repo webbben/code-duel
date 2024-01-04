@@ -74,7 +74,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
         ws.current = new WebSocket(`ws://localhost:8080/ws?room=${roomID}`);
 
         ws.current.addEventListener('open', (event) => {
-            console.log('WebSocket connection opened');
             // send auth info
             if (idToken) {
                 const message: Message = {
@@ -188,7 +187,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
     const handleChatMessage = (callback: (incomingMessage: ChatMessage) => void) => {
         const listener = (event: MessageEvent) => {
             const receivedMessage = JSON.parse(event.data);
-            console.log("incoming message", receivedMessage);
             if (receivedMessage.type !== "chat_message") {
                 return;
             }
@@ -219,7 +217,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
     const handleRoomMessage = (callback: (incomingMessage: RoomMessage) => void) => {
         const listener = (event: MessageEvent) => {
             const receivedMessage = JSON.parse(event.data);
-            console.log("incoming message", receivedMessage);
             if (receivedMessage.type !== "room_message") {
                 return;
             }
@@ -249,7 +246,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
     const handleGameMessage = (callback: (incomingMessage: RoomMessage) => void) => {
         const listener = (event: MessageEvent) => {
             const receivedMessage = JSON.parse(event.data);
-            console.log("incoming message", receivedMessage);
             if (receivedMessage.type !== messageTypes.gameMessage) {
                 return;
             }
