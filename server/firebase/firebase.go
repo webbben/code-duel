@@ -88,6 +88,9 @@ func GetAllDocsInCollection(collectionPath string) (docs []map[string]interface{
 
 // deletes a document in firestore
 func DeleteDocument(collectionPath string, documentID string) (writeResult *firestore.WriteResult, err error) {
+	if collectionPath == "" || documentID == "" {
+		return nil, errors.New("failed to delete document: missing collection path or document ID")
+	}
 	ctx := context.Background()
 	writeResult, err = firestoreClient.Collection(collectionPath).Doc(documentID).Delete(ctx)
 	return

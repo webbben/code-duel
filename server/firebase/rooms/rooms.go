@@ -119,6 +119,33 @@ func GetRoom(roomID string) (*models.Room, error) {
 	return room, nil
 }
 
+func GetRooms() ([]models.Room, error) {
+	firestoreClient := firebase.GetFirestoreClient()
+	collectionRef := firestoreClient.Collection("rooms")
+	if collectionRef == nil {
+		return nil, errors.New("failed to get collection ref")
+	}
+	ctx := context.Background()
+	snapshots, err := collectionRef.Documents(ctx).GetAll()
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("failed to get snapshots; %v", err))
+	}
+
+	// get the data out of the snapshots
+	var docs []models.Room
+	for _, snapshot := range snapshots {
+		id := snapshot.Ref.ID
+		var data models.Room
+		err = snapshot.DataTo(&data)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("failed to get data from snapshot; %v", err))
+		}
+		data.ID = id // add the document ID too
+		docs = append(docs, data)
+	}
+	return docs, nil
+}
+
 // set game information in room
 func SetupGameContext(roomID string, problemID string) error {
 	updates := []firestore.Update{

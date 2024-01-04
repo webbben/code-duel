@@ -24,6 +24,7 @@ type CreateRoomRequest struct {
 }
 
 type Room struct {
+	ID            string   `json:"id"`            // id in firestore
 	Owner         string   `json:"Owner"`         // owner of the room is the user that created it
 	Title         string   `json:"Title"`         // title of the room
 	Difficulty    int      `json:"Difficulty"`    // difficulty of the problems for this room
