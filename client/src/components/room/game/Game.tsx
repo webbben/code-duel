@@ -1,9 +1,8 @@
 import { Editor } from "@monaco-editor/react";
-import { Divider, IconButton, MenuItem, Select, Typography } from "@mui/material";
+import { Divider, MenuItem, Select, Typography } from "@mui/material";
 import '../../../styles/Room.css';
 import '../../../styles/Game.css';
 import { useEffect, useState } from "react";
-import { PlayArrow } from "@mui/icons-material";
 import ProblemDetails from "./ProblemDetails";
 import { RoomMessage, useWebSocket } from "../../WebSocketContext";
 import { codeExecResponse, loadGameRoom, loadProblemTemplate, testCode } from "../../../dataProvider";
@@ -169,7 +168,10 @@ export default function Game(props: GameProps) {
                     language={langMapEditor[lang]} 
                     value={code} 
                     onChange={(s, _ev) => handleChangeCode(s)}
-                    theme='vs-dark' />
+                    theme='vs-dark'
+                    options={{
+                        minimap: { enabled: false }
+                    }} />
                     </div>
                 </div>
                 <TestResults 

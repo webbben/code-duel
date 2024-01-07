@@ -86,6 +86,14 @@ func AddOrRemoveUser(username string, roomID string, add bool) error {
 			room.Users = append(room.Users, username)
 		} else {
 			room.Users = general.RemoveElementFromArray(username, room.Users)
+			// if the room is empty now, just delete the room instead.
+			if len(room.Users) == 0 {
+				err = tx.Delete(roomRef)
+				if err != nil {
+					return errors.New(fmt.Sprintf("failed to delete room after last user leaving; %v", err))
+				}
+				return nil
+			}
 		}
 		// Update the document in Firestore
 		err = tx.Update(roomRef, []firestore.Update{

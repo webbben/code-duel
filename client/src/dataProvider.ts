@@ -78,7 +78,8 @@ export async function leaveRoom(roomID: string, token: string): Promise<boolean>
         }
     });
     if (!response.ok) {
-        console.error(`failed to leave room ${roomID}`, response.statusText);
+        const responseText = await response.text();
+        console.error(`failed to leave room ${roomID}`, response.statusText, responseText);
         return false;
     }
     return true;
@@ -119,7 +120,7 @@ export interface codeExecResponse {
 }
 
 export async function launchGame(roomID: string, problemID: string, token: string): Promise<boolean> {
-    if (roomID == "" || problemID == "" || token == "") {
+    if (roomID === "" || problemID === "" || token === "") {
         console.error("launchGame: missing required input params");
         return false;
     }

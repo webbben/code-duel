@@ -78,7 +78,7 @@ export default function RoomContent(props: RoomContentProps) {
                     return;
                 }
                 if (!roomData.Users.includes(roomUpdate.data.value)) break;
-                roomData.Users = roomData.Users.filter((user) => user != roomUpdate.data.value);
+                roomData.Users = roomData.Users.filter((user) => user !== roomUpdate.data.value);
                 console.log(`user ${roomUpdate.data.value} has left the room.`);
                 break;
             case RoomUpdateTypes.setUserReady:
@@ -103,7 +103,7 @@ export default function RoomContent(props: RoomContentProps) {
         return () => {
             unsubRoomMessages();
         };
-    }, []);
+    });
 
     console.log(`last room update: ${updateTimestamp}`);
 
