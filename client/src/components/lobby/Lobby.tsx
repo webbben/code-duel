@@ -1,5 +1,5 @@
 import { Button, Grid, IconButton, Stack, Typography } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import RoomRow from "./RoomRow";
 import '../../styles/Lobby.css';
 import '../../styles/general.css';
@@ -74,6 +74,7 @@ export default function Lobby() {
                         </IconButton>
                     </div>
                     <Stack spacing={1}>
+                        { (!rooms || rooms.length === 0) && <div>No rooms available. Try refreshing the list or creating a room.</div>}
                         {
                             rooms?.map((room) => {
                                 return (

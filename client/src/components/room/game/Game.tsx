@@ -46,7 +46,7 @@ export default function Game(props: GameProps) {
     if (problemID === "") {
         console.warn("no problem ID found for game!");
     }
-    if (problem && props.roomData) {
+    if (problem && props.roomData?.Problem) {
         if (problem.id !== props.roomData.Problem) {
             console.warn("problem ID on problem object doesn't match problem ID on room object?", `problem obj: ${problem.id}`, `room obj: ${props.roomData.Problem}`);
         }
@@ -133,7 +133,7 @@ export default function Game(props: GameProps) {
     // reload code template if language changes
     useEffect(() => {
         loadCodeTemplate();
-    }, [lang]);
+    }, [lang, problemID]);
 
     return (
         <div style={{ height: '100%', display: 'flex', flexDirection: 'row', backgroundColor: 'black', paddingRight: '10px', paddingBottom: '10px'}}>
