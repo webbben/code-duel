@@ -1,4 +1,4 @@
-import React, { ReactNode, createContext, useContext, useEffect, useRef } from "react";
+import React, { ReactNode, createContext, useContext, useEffect, useRef, useState } from "react";
 import { useAppSelector } from "../redux/hooks";
 import { RootState } from "../redux/store";
 
@@ -12,6 +12,7 @@ interface WebSocketContextType {
     sendRoomMessage: (roomUpdate: RoomUpdate) => void;
     handleRoomMessage: (callback: (incomingMessage: RoomMessage) => void) => () => void;
     handleGameMessage: (callback: (incomingMessage: RoomMessage) => void) => () => void;
+    connectionOpen: boolean;
 }
 export interface ChatMessage {
     type: string,
@@ -36,9 +37,7 @@ export interface RoomUpdate {
 
 // room updates that can be broadcast to other clients in a room
 export const RoomUpdateTypes = {
-    changeRoomName: 'CHANGE_ROOM_NAME',
     changeDifficulty: 'CHANGE_DIFFICULTY',
-    changeMode: 'CHANGE_MODE',
     changeTimeLimit: 'CHANGE_TIME_LIMIT',
     changeProblem: 'CHANGE_PROBLEM',
     setUserReady: 'SET_USER_READY',
@@ -62,6 +61,7 @@ const WebSocketContext = createContext<WebSocketContextType | undefined>(undefin
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, roomID }) => {
 
     const ws = useRef<WebSocket | null>(null);
+    const [connectionOpen, setConnectionOpen] = useState(false);
     const messageQueue = useRef<Message[]>([]); // enqueue messages if they are unable to be sent
     const loggedIn = useAppSelector((state: RootState) => state.userInfo.loggedIn);
     const idToken = useAppSelector((state: RootState) => state.userInfo.idToken);
@@ -74,6 +74,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
         ws.current = new WebSocket(`ws://localhost:8080/ws?room=${roomID}`);
 
         ws.current.addEventListener('open', (event) => {
+            setConnectionOpen(true);
             // send auth info
             if (idToken) {
                 const message: Message = {
@@ -95,6 +96,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
         });
 
         ws.current.addEventListener('close', (event) => {
+            setConnectionOpen(false);
             console.log('WebSocket connection closed');
         });
 
@@ -107,7 +109,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
                 ws.current.close();
             }
         };
-    }, []);
+    });
 
     /* handles sending a chat message over websocket to other users in the same room */
     const sendChatMessage = (msg: string, sender: string) => {
@@ -277,7 +279,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
         handleChatMessage,
         sendRoomMessage,
         handleRoomMessage,
-        handleGameMessage
+        handleGameMessage,
+        connectionOpen
     };
 
     return (

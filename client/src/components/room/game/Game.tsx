@@ -61,7 +61,7 @@ export default function Game(props: GameProps) {
         return initialScores;
       });
 
-    const { handleGameMessage } = useWebSocket();
+    const { handleGameMessage, connectionOpen } = useWebSocket();
 
     function updateUserProgress(username: string, progress: number) {
         if (!props.roomData.Users.includes(username)) {
@@ -94,7 +94,7 @@ export default function Game(props: GameProps) {
         const roomUpdate = msg.roomupdate;
 
         // update for a user's progress
-        if (roomUpdate.type == "CODE_SUBMIT_RESULT") {
+        if (roomUpdate.type === "CODE_SUBMIT_RESULT") {
             const user = roomUpdate.data.user;
             const progress = roomUpdate.data.value;
             updateUserProgress(user, progress);
@@ -113,6 +113,7 @@ export default function Game(props: GameProps) {
 
     // handle first time loading actions
     useEffect(() => {
+        if (!connectionOpen) return;
         // sub to game messages
         const unsubRoomMessages = handleGameMessage((incomingMessage: RoomMessage) => {
             console.log("received game update");
@@ -127,7 +128,7 @@ export default function Game(props: GameProps) {
         return () => {
             unsubRoomMessages();
         };
-    }, []);
+    }, [connectionOpen]);
 
     // reload code template if language changes
     useEffect(() => {

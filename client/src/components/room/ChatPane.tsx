@@ -2,7 +2,7 @@ import { ArrowUpward } from "@mui/icons-material";
 import { IconButton, InputAdornment, TextField } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import ChatMessageElem from "./ChatMessage";
-import { ChatMessage, RoomMessage, RoomUpdateTypes, messageTypes, useWebSocket } from "../WebSocketContext";
+import { ChatMessage, RoomMessage, RoomUpdateTypes, useWebSocket } from "../WebSocketContext";
 
 interface ChatPaneProps {
     username?: string,
@@ -12,7 +12,7 @@ export default function ChatPane(props: ChatPaneProps) {
 
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [messageInput, setMessageInput] = useState('');
-    const { sendChatMessage, handleChatMessage, handleRoomMessage } = useWebSocket();
+    const { sendChatMessage, handleChatMessage, handleRoomMessage, connectionOpen } = useWebSocket();
 
     function addMessage(chatMsg: ChatMessage) {
         setMessages(prevMessages => [...prevMessages, {...chatMsg}]);
@@ -40,6 +40,7 @@ export default function ChatPane(props: ChatPaneProps) {
     }
 
     useEffect(() => {
+        if (!connectionOpen) return;
         const unsubChatMessages = handleChatMessage((chatMsg: ChatMessage) => {
             console.log(`received message from ${chatMsg.sender}`);
             if (chatMsg.sender === props.username) return;
@@ -68,8 +69,9 @@ export default function ChatPane(props: ChatPaneProps) {
 
         return () => {
             unsubChatMessages();
+            unsubRoomMessages();
         }
-    }, []);
+    }, [connectionOpen]);
 
     return (
         <div className="room_paneCard" style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column'}}>

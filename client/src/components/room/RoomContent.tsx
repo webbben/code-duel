@@ -30,7 +30,7 @@ export default function RoomContent(props: RoomContentProps) {
     // it serves to both log the latest websocket update, but crucially also trigger a rerender.
     const [updateTimestamp, setUpdateTimestamp] = useState('');
 
-    const { handleRoomMessage } = useWebSocket();
+    const { handleRoomMessage, connectionOpen } = useWebSocket();
 
     async function handleLaunchGame(problemID: string) {
         if (!loggedIn || !idToken || !roomData.id) return;
@@ -54,19 +54,13 @@ export default function RoomContent(props: RoomContentProps) {
         const type = roomUpdate.type;
 
         switch (type) {
-            case RoomUpdateTypes.changeRoomName:
-                roomData.Title = roomUpdate.data.value;
-                console.log(`room name set to ${roomUpdate.data.value}.`);
-                // TODO - keep this or discard? not sure if we will allow renaming existing rooms
-                break;
             case RoomUpdateTypes.changeDifficulty:
                 roomData.Difficulty = roomUpdate.data.value;
                 console.log(`room difficulty set to ${roomUpdate.data.value}.`);
                 break;
             case RoomUpdateTypes.userJoin:
                 if (!roomData.Users) {
-                    console.warn("room has no user list?");
-                    return;
+                    roomData.Users = [];
                 }
                 if (roomData.Users.includes(roomUpdate.data.value)) break;
                 roomData.Users.push(roomUpdate.data.value);
@@ -94,6 +88,7 @@ export default function RoomContent(props: RoomContentProps) {
     }
     
     useEffect(() => {
+        if (!connectionOpen) return;
         const unsubRoomMessages = handleRoomMessage((incomingMessage: RoomMessage) => {
             console.log("received room update");
             console.log(incomingMessage);
@@ -103,7 +98,7 @@ export default function RoomContent(props: RoomContentProps) {
         return () => {
             unsubRoomMessages();
         };
-    });
+    }, [connectionOpen]);
 
     console.log(`last room update: ${updateTimestamp}`);
 
