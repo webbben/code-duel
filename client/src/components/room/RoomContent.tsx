@@ -5,15 +5,22 @@ import ChatPane from "./ChatPane";
 import { Alert, Snackbar } from "@mui/material";
 import { useAppSelector } from "../../redux/hooks";
 import { RootState } from "../../redux/store";
-import { RoomMessage, RoomUpdateTypes, useWebSocket } from "../WebSocketContext";
+import { RoomMessage, RoomUpdate, RoomUpdateTypes, useWebSocket } from "../WebSocketContext";
 import { Link } from "react-router-dom";
 import { routes } from "../../router/router";
 import Game from "./game/Game";
-import { launchGame } from "../../dataProvider";
+import { getProblemList, launchGame } from "../../dataProvider";
 import { Room } from "../../dataModels";
 
 interface RoomContentProps {
     roomData: Room
+}
+
+export interface ProblemOverview {
+    name: string
+    id: string
+    difficulty: number
+    quickDesc: string
 }
 
 export default function RoomContent(props: RoomContentProps) {
@@ -24,13 +31,16 @@ export default function RoomContent(props: RoomContentProps) {
     const idToken = useAppSelector((state: RootState) => state.userInfo.idToken);
 
     // we handle updating the room data in kind of an odd way:
-    // roomData is initialized when the client loads a room's url, using react-router's loader functionality
-    // then, when updates come in through websocket, we manually change roomData
-    // since roomData isn't a state variable, we also keep this timestamp state variable.
-    // it serves to both log the latest websocket update, but crucially also trigger a rerender.
+    // roomData is loaded from the database in the wrapper component and passed in here as a prop
+    // instead of making state variables for all the different properties of roomData, we are just
+    // updating that object directly
+    // then, sort of hacky, but triggering a re-render by changing this last update timestamp state variable.
     const [updateTimestamp, setUpdateTimestamp] = useState('');
 
-    const { handleRoomMessage, connectionOpen } = useWebSocket();
+    const [problemOverview, setProblemOverview] = useState<ProblemOverview>();
+    const [problemList, setProblemList] = useState<ProblemOverview[]>([]);
+
+    const { handleRoomMessage, connectionOpen, sendRoomMessage } = useWebSocket();
 
     async function handleLaunchGame(problemID: string) {
         if (!loggedIn || !idToken || !roomData.id) return;
@@ -45,6 +55,32 @@ export default function RoomContent(props: RoomContentProps) {
         console.log("launching game...");
     }
 
+    function handleUpdateRoomSettings(setting: string, value: any) {
+        switch (setting) {
+            case "difficulty":
+                roomData.Difficulty = value;
+                break;
+            case "timeLimit":
+                roomData.TimeLimit = value;
+                break;
+            case "randomProblem":
+                roomData.RandomProblem = value;
+                break;
+        }
+        const today = new Date();
+        setUpdateTimestamp(today.toLocaleTimeString());
+    }
+
+    function sendRoomUpdate(updateType: string, updateValue: any) {
+        const roomUpdate: RoomUpdate = {
+            type: updateType,
+            data: {
+                value: updateValue
+            }
+        }
+        sendRoomMessage(roomUpdate);
+    }
+
     function updateRoomInfo(roomMsg: RoomMessage) {
         if (!roomData) {
             return;
@@ -57,6 +93,9 @@ export default function RoomContent(props: RoomContentProps) {
             case RoomUpdateTypes.changeDifficulty:
                 roomData.Difficulty = roomUpdate.data.value;
                 console.log(`room difficulty set to ${roomUpdate.data.value}.`);
+                break;
+            case RoomUpdateTypes.changeTimeLimit:
+                roomData.TimeLimit = roomUpdate.data.value;
                 break;
             case RoomUpdateTypes.userJoin:
                 if (!roomData.Users) {
@@ -83,10 +122,29 @@ export default function RoomContent(props: RoomContentProps) {
                 console.log("launching game!");
                 roomData.InGame = true;
                 break;
+            case RoomUpdateTypes.changeProblem:
+                console.log("changing problem");
+                const problemOverview = roomUpdate.data.value as ProblemOverview;
+                roomData.Problem = problemOverview?.id || "";
+                setProblemOverview(problemOverview);
+                break;
+            case RoomUpdateTypes.randomProblem:
+                roomData.RandomProblem = roomUpdate.data.value;
+                break;
         }
         setUpdateTimestamp(timestamp);
     }
+
+    // load problems
+    useEffect(() => {
+        const loadProblems = async () => {
+            const loadedProblems = await getProblemList();
+            setProblemList(loadedProblems);
+        }
+        loadProblems();
+    }, []);
     
+    // handle websocket connection
     useEffect(() => {
         if (!connectionOpen) return;
         const unsubRoomMessages = handleRoomMessage((incomingMessage: RoomMessage) => {
@@ -116,8 +174,15 @@ export default function RoomContent(props: RoomContentProps) {
         <div style={{padding: '20px', height: '100%', display: 'flex', flexDirection: 'row'}}>
             <div className="room_pane">
                 <GameSettings
+                timeLimit={roomData.TimeLimit}
+                updateSetting={handleUpdateRoomSettings}
+                problem={problemOverview}
+                setProblem={setProblemOverview}
+                randomProblem={roomData.RandomProblem}
+                problemList={problemList}
                 isOwner={username === roomData.Owner}
                 launchGameCallback={handleLaunchGame}
+                sendRoomUpdate={sendRoomUpdate}
                 title={roomData.Title}
                 difficulty={roomData.Difficulty}
                 updateSettings={() => console.log('hi')} />

@@ -40,10 +40,11 @@ export const RoomUpdateTypes = {
     changeDifficulty: 'CHANGE_DIFFICULTY',
     changeTimeLimit: 'CHANGE_TIME_LIMIT',
     changeProblem: 'CHANGE_PROBLEM',
+    randomProblem: 'RANDOM_PROBLEM',
     setUserReady: 'SET_USER_READY',
     userLeave: 'USER_LEAVE',
     userJoin: 'USER_JOIN',
-    launchGame: 'LAUNCH_GAME'
+    launchGame: 'LAUNCH_GAME',
 }
 
 // the types of messages that can be broadcast to other clients in a room

@@ -12,6 +12,8 @@ export interface Room {
     Title: string
     /** Difficulty of the room; 1=Easy, 2=Med, 3=Hard */
     Difficulty: number
+    /** time limit for the game */
+    TimeLimit: number
     /** Whether this room is in game or not */
     InGame: boolean
     /** Maximum capacity of users for this room */
@@ -20,6 +22,8 @@ export interface Room {
     Owner: string
     /** Problem ID for problem this room will play */
     Problem: string
+    /** Whether or not this room will play a random problem */
+    RandomProblem: boolean
     /** Whether the room requires a password to join */
     ReqPassword: boolean
     /** Password for this room */

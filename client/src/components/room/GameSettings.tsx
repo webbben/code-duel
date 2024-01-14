@@ -1,49 +1,68 @@
 import { Autocomplete, Button, Slider, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import "../../styles/Room.css";
-import { getProblemList } from "../../dataProvider";
+import { RoomUpdateTypes } from "../WebSocketContext";
+import { ProblemOverview } from "./RoomContent";
 
 interface GameSettingsProps {
     title: string,
     difficulty: number,
+    updateSetting: Function,
     timeLimit?: number,
-    problem?: string,
+    problem?: ProblemOverview,
+    setProblem: Function,
+    randomProblem: boolean,
+    problemList: ProblemOverview[],
     updateSettings: Function,
     isOwner: boolean,
-    launchGameCallback: Function
-}
-
-interface ProblemOverview {
-    name: string
-    id: string
-    difficulty: number
-    quickDesc: string
+    launchGameCallback: Function,
+    sendRoomUpdate: Function
 }
 
 const diffMap = ["Easy", "Med", "Hard"];
 
 export default function GameSettings(props: GameSettingsProps) {
-    const [diff, setDiff] = useState<number>(props.difficulty);
-    const [randomProblem, setRandomProblem] = useState<boolean>(true);
-    const [problem, setProblem] = useState<ProblemOverview | null>(null);
-    const [problemList, setProblemList] = useState<ProblemOverview[]>([]);
-    const [timeLimit, setTimeLimit] = useState<number>(30);
+    const [timeLimitDisp, setTimeLimitDisp] = useState<number>(props.timeLimit || 0);
 
-    // load problems
+    const problem = props.problem;
+    const setProblem = props.setProblem;
+    const problemList = props.problemList;
+    const diff = props.difficulty;
+    const setDiff = (newValue: number) => {
+        props.updateSetting("difficulty", newValue);
+        props.sendRoomUpdate(RoomUpdateTypes.changeDifficulty, newValue);
+    };
+    const setTimeLimit = (newValue: number) => {
+        setTimeLimitDisp(newValue);
+    }
+    const updateTimeLimit = () => {
+        props.sendRoomUpdate(RoomUpdateTypes.changeTimeLimit, timeLimitDisp);
+        props.updateSetting("timeLimit", timeLimitDisp);
+    }
+    const randomProblem = props.randomProblem;
+    const setRandomProblem = (newValue: boolean) => {
+        props.updateSetting("randomProblem", newValue);
+        props.sendRoomUpdate(RoomUpdateTypes.randomProblem, newValue);
+    }
+
     useEffect(() => {
-        const loadProblems = async () => {
-            const loadedProblems = await getProblemList();
-            setProblemList(loadedProblems);
+        if (props.timeLimit) {
+            setTimeLimitDisp(props.timeLimit);
         }
-        loadProblems();
-    }, []);
+    }, [props.timeLimit]);
 
     // if difficulty is changed and it doesn't match the problem, unset the problem
     useEffect(() => {
         if (problem?.difficulty !== diff) {
             setProblem(null);
         }
-    }, [diff]);
+    }, [problem?.difficulty, diff]);
+
+    function handleSetProblem(problem: ProblemOverview | null) {
+        setProblem(problem);
+        // inform other clients of the current problem
+        props.sendRoomUpdate(RoomUpdateTypes.changeProblem, problem);
+    }
 
     return (
         <div className="room_paneCard" style={{ flex: '1 1 auto' }}>
@@ -53,6 +72,7 @@ export default function GameSettings(props: GameSettingsProps) {
                     <div className="_flexRow">
                         <Typography marginRight={1}>Difficulty: </Typography>
                         <ToggleButtonGroup
+                            disabled={!props.isOwner}
                             color="primary"
                             value={diff}
                             exclusive
@@ -63,29 +83,41 @@ export default function GameSettings(props: GameSettingsProps) {
                         </ToggleButtonGroup>
                     </div>
                     <div className="_flexRow">
-                        <Typography marginRight={1}>Time Limit: {props.timeLimit}</Typography>
-                        <Typography sx={{ minWidth: '50px' }}>{`${timeLimit} min`}</Typography>
+                        <Typography marginRight={1}>Time Limit: </Typography>
+                        <Typography sx={{ minWidth: '50px' }}>{`${timeLimitDisp} min`}</Typography>
                         <Slider
                         sx={{ maxWidth: '200px', marginLeft: '20px'}}
-                        value={timeLimit}
+                        value={timeLimitDisp}
                         onChange={(_e, v) => setTimeLimit(Array.isArray(v) ? v[0] : v)}
+                        onChangeCommitted={() => updateTimeLimit()}
                         min={5}
                         max={60}
                         step={1}
-                        valueLabelDisplay="auto" />
+                        valueLabelDisplay="auto"
+                        disabled={!props.isOwner} />
                     </div>
                     <div className="_flexRow">
-                        <Typography marginRight={1}>Problem: {props.problem}</Typography>
-                        <ToggleButtonGroup
-                            color="primary"
-                            value={randomProblem}
-                            exclusive
-                            onChange={(_e, v) => setRandomProblem(v)}>
-                                <ToggleButton value={true}>Random</ToggleButton>
-                                <ToggleButton value={false}>Choose...</ToggleButton>
-                        </ToggleButtonGroup>
+                        { props.isOwner ?
+                        <>
+                            <Typography marginRight={1}>Problem: </Typography>
+                            <ToggleButtonGroup
+                                color="primary"
+                                value={randomProblem}
+                                exclusive
+                                onChange={(_e, v) => setRandomProblem(v)}>
+                                    <ToggleButton value={true}>Random</ToggleButton>
+                                    <ToggleButton value={false}>Choose...</ToggleButton>
+                            </ToggleButtonGroup>
+                        </>
+                        :
+                        <div>
+                            <Typography marginRight={1}>Problem: {problem?.name || (randomProblem ? "Random!" : "None selected")}</Typography>
+                            <br />
+                            <Typography marginRight={1}>{problem?.quickDesc}</Typography>
+                        </div>
+                        }
                     </div>
-                    { !randomProblem && 
+                    { (props.isOwner && !randomProblem) && 
                     <div>
                     <Autocomplete
                     groupBy={(option) => diffMap[option.difficulty - 1]}
@@ -97,7 +129,7 @@ export default function GameSettings(props: GameSettingsProps) {
                     sx={{
                         m: 1
                     }}
-                    onChange={(e, v) => setProblem(v)}
+                    onChange={(_e, v) => handleSetProblem(v)}
                     value={problem}
                     />
                     <Typography>{problem?.quickDesc}</Typography>
