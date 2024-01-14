@@ -30,7 +30,7 @@ func CreateRoom(request *models.CreateRoomRequest, username string) (roomID stri
 		Title:       request.Title,
 		Difficulty:  request.Difficulty,
 		MaxCapacity: request.MaxCapacity,
-		Users:       make([]string, 0),
+		Users:       []string{username},
 		Status:      "waiting",
 		ReqPassword: request.ReqPassword,
 		Password:    request.Password,

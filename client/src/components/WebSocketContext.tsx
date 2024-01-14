@@ -71,7 +71,12 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
             console.warn('user not logged in; aborting websocket connection');
             return;
         }
+        // make sure we don't open multiple sockets for the same client
+        if (ws.current) {
+            return;
+        }
         ws.current = new WebSocket(`ws://localhost:8080/ws?room=${roomID}`);
+        console.warn("setting up new websocket connection");
 
         ws.current.addEventListener('open', (event) => {
             setConnectionOpen(true);

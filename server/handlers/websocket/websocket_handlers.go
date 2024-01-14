@@ -70,6 +70,9 @@ func HandleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		// Remove the client when the connection is closed
 		roomClientsMutex.Lock()
+		if roomClients[room][conn] == false {
+			log.Println("error: connection doesn't exist in room clients map!")
+		}
 		delete(roomClients[room], conn)
 		roomClientsMutex.Unlock()
 		// try to remove the user from room as well, just in case they didn't leave properly
@@ -89,6 +92,7 @@ func HandleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 	roomClientsMutex.Unlock()
 
 	log.Println(fmt.Sprintf("new websocket connection for room %s", room))
+	log.Printf("conn: %p\n", conn)
 
 	// Handle incoming messages
 	for {
@@ -166,6 +170,7 @@ func broadcastMessage(message Message, sendingConnection *websocket.Conn) {
 	roomClientsMutex.Lock()
 	defer roomClientsMutex.Unlock()
 
+	log.Printf("message from conn %p", sendingConnection)
 	log.Printf("broadcasting to room %s: %s", message.Room, message.Type)
 	counter := 0
 
@@ -188,9 +193,7 @@ func broadcastMessage(message Message, sendingConnection *websocket.Conn) {
 		counter += 1
 	}
 	log.Printf("broadcast to %v clients", counter)
-	if counter > 2 {
-		fmt.Println(roomClients[message.Room])
-	}
+	fmt.Println(roomClients[message.Room])
 }
 
 // broadcasts when a user joins or leaves a room
