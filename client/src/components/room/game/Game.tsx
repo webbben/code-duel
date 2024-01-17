@@ -123,9 +123,11 @@ export default function Game(props: GameProps) {
     // handle loading code template
     useEffect(() => {
         if (!lang || !problem || problem.id === "") return;
+        console.log("useEffect: load code template");
 
         async function loadCodeTemplate() {
             if (!problem) return;
+            console.log("loading code template");
             const template = await loadProblemTemplate(problem.id, lang);
             setCode(template || "");
         }
@@ -134,7 +136,9 @@ export default function Game(props: GameProps) {
 
     // load game room data
     useEffect(() => {
+        console.log("useEffect: load problem");
         async function loadProblem() {
+            console.log("loading game room");
             const problemData = await loadGameRoom(
                 props.roomData.id,
                 props.token
@@ -142,7 +146,7 @@ export default function Game(props: GameProps) {
             setProblem(problemData);
         }
         loadProblem();
-    });
+    }, []);
 
     return (
         <div
