@@ -1,32 +1,37 @@
 import { Editor } from "@monaco-editor/react";
 import { Divider, MenuItem, Select, Typography } from "@mui/material";
-import '../../../styles/Room.css';
-import '../../../styles/Game.css';
+import "../../../styles/Room.css";
+import "../../../styles/Game.css";
 import { useEffect, useState } from "react";
 import ProblemDetails from "./ProblemDetails";
 import { RoomMessage, useWebSocket } from "../../WebSocketContext";
-import { codeExecResponse, loadGameRoom, loadProblemTemplate, testCode } from "../../../dataProvider";
+import {
+    codeExecResponse,
+    loadGameRoom,
+    loadProblemTemplate,
+    testCode,
+} from "../../../dataProvider";
 import { Problem, Room } from "../../../dataModels";
 import TestResults from "./TestResults";
 
 const langMapEditor: { [id: string]: string } = {
-    "py": "python",
-    "go": "go",
-    "sh": "shell"
+    py: "python",
+    go: "go",
+    sh: "shell",
 };
 
 const langMapServer: { [id: string]: string } = {
-    "py": "python",
-    "go": "go",
-    "sh": "bash"
+    py: "python",
+    go: "go",
+    sh: "bash",
 };
 
 const defaultLang = "py";
 
 interface GameProps {
-    roomData: Room
-    token: string
-    username: string
+    roomData: Room;
+    token: string;
+    username: string;
 }
 
 interface UserProgress {
@@ -34,7 +39,6 @@ interface UserProgress {
 }
 
 export default function Game(props: GameProps) {
-
     const [lang, setLang] = useState(defaultLang);
     const [code, setCode] = useState<string>("");
     const [problem, setProblem] = useState<Problem | null>(null);
@@ -42,13 +46,21 @@ export default function Game(props: GameProps) {
 
     // define the problem ID here since there are technically two places the problem ID could be retrieved from
     // TODO redo logic on getting problem/problem ID for room?
-    const problemID: string = problem ? problem.id : (props.roomData ? props.roomData.Problem : "");
+    const problemID: string = problem
+        ? problem.id
+        : props.roomData
+        ? props.roomData.Problem
+        : "";
     if (problemID === "") {
         console.warn("no problem ID found for game!");
     }
     if (problem && props.roomData?.Problem) {
         if (problem.id !== props.roomData.Problem) {
-            console.warn("problem ID on problem object doesn't match problem ID on room object?", `problem obj: ${problem.id}`, `room obj: ${props.roomData.Problem}`);
+            console.warn(
+                "problem ID on problem object doesn't match problem ID on room object?",
+                `problem obj: ${problem.id}`,
+                `room obj: ${props.roomData.Problem}`
+            );
         }
     }
 
@@ -56,10 +68,10 @@ export default function Game(props: GameProps) {
         // initialize all scores to zero
         const initialScores: UserProgress = {};
         props.roomData?.Users?.forEach((username) => {
-          initialScores[username] = 0;
+            initialScores[username] = 0;
         });
         return initialScores;
-      });
+    });
 
     const { handleGameMessage, connectionOpen } = useWebSocket();
 
@@ -83,7 +95,17 @@ export default function Game(props: GameProps) {
             console.warn("there's no code to test");
             return;
         }
-        const testResults = await testCode(code, langMapServer[lang], problemID, props.token, props.roomData.id, true);
+        const testResults = await testCode(
+            code,
+            langMapServer[lang],
+            problemID,
+            props.token,
+            props.roomData.id,
+            true
+        );
+        if (testResults) {
+            setLastTestResult(testResults);
+        }
         console.log("test results: ", testResults);
     }
 
@@ -101,84 +123,112 @@ export default function Game(props: GameProps) {
         }
     }
 
-    async function loadProblem() {
-        const problemData = await loadGameRoom(props.roomData.id, props.token);
-        setProblem(problemData);
-    }
-
-    async function loadCodeTemplate() {
-        const template = await loadProblemTemplate(problemID, lang);
-        setCode(template || "");
-    }
-
-    // handle first time loading actions
+    // handle subscribing to websocket game messages
     useEffect(() => {
         if (!connectionOpen) return;
         // sub to game messages
-        const unsubRoomMessages = handleGameMessage((incomingMessage: RoomMessage) => {
-            console.log("received game update");
-            console.log(incomingMessage);
-            updateGameInfo(incomingMessage);
-        });
-
-        // load data for game
-        loadProblem();
-        loadCodeTemplate();
+        const unsubRoomMessages = handleGameMessage(
+            (incomingMessage: RoomMessage) => {
+                console.log("received game update");
+                console.log(incomingMessage);
+                updateGameInfo(incomingMessage);
+            }
+        );
 
         return () => {
             unsubRoomMessages();
         };
     }, [connectionOpen]);
 
-    // reload code template if language changes
+    // handle loading code template
     useEffect(() => {
+        if (!lang || !problemID) return;
+
+        async function loadCodeTemplate() {
+            const template = await loadProblemTemplate(problemID, lang);
+            setCode(template || "");
+        }
         loadCodeTemplate();
     }, [lang, problemID]);
 
+    // load game room data
+    useEffect(() => {
+        async function loadProblem() {
+            const problemData = await loadGameRoom(
+                props.roomData.id,
+                props.token
+            );
+            setProblem(problemData);
+        }
+        loadProblem();
+    }, [problemID]);
+
     return (
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'row', backgroundColor: 'black', paddingRight: '10px', paddingBottom: '10px'}}>
+        <div
+            style={{
+                height: "100%",
+                display: "flex",
+                flexDirection: "row",
+                backgroundColor: "black",
+                paddingRight: "10px",
+                paddingBottom: "10px",
+            }}
+        >
             <div className="room_pane">
                 <ProblemDetails problem={problem} />
-                <div className="game_section" style={{ flex: '0 1 auto'}}>
+                <div className="game_section" style={{ flex: "0 1 auto" }}>
                     <Typography>Player Info</Typography>
-                    { props.roomData?.Users?.map((user: string) => {
+                    {props.roomData?.Users?.map((user: string) => {
                         return (
-                            <Typography key={user}>{`${user} | progress: ${userProgress[user]}`}</Typography>
-                        )
+                            <Typography
+                                key={user}
+                            >{`${user} | progress: ${userProgress[user]}`}</Typography>
+                        );
                     })}
                 </div>
             </div>
             <div className="room_pane">
-                <div className="game_section" style={{ flex: '1 1 auto', minHeight: '70%', display: 'flex', flexDirection: 'column'}}>
-                    <div style={{ display: 'flex', alignItems: 'center'}}>
+                <div
+                    className="game_section"
+                    style={{
+                        flex: "1 1 auto",
+                        minHeight: "70%",
+                        display: "flex",
+                        flexDirection: "column",
+                    }}
+                >
+                    <div style={{ display: "flex", alignItems: "center" }}>
                         <Typography>solution.</Typography>
-                        <Select 
-                        value={lang}
-                        onChange={(e) => setLang(e.target.value)}
-                        variant='standard'
-                        sx={{ color: 'green'}}>
+                        <Select
+                            value={lang}
+                            onChange={(e) => setLang(e.target.value)}
+                            variant="standard"
+                            sx={{ color: "green" }}
+                        >
                             <MenuItem value="py">py</MenuItem>
                             <MenuItem value="go">go</MenuItem>
                             <MenuItem value="sh">sh</MenuItem>
                         </Select>
                     </div>
                     <Divider />
-                    <div style={{ flex: '1 1 auto'}}>
-                    <Editor 
-                    height={'100%'} 
-                    language={langMapEditor[lang]} 
-                    value={code} 
-                    onChange={(s, _ev) => handleChangeCode(s)}
-                    theme='vs-dark'
-                    options={{
-                        minimap: { enabled: false }
-                    }} />
+                    <div style={{ flex: "1 1 auto" }}>
+                        <Editor
+                            height={"100%"}
+                            language={langMapEditor[lang]}
+                            value={code}
+                            onChange={(s, _ev) => handleChangeCode(s)}
+                            theme="vs-dark"
+                            options={{
+                                minimap: { enabled: false },
+                            }}
+                        />
                     </div>
                 </div>
-                <TestResults 
-                runTestsCallback={runTestCases} 
-                codeExecResult={lastTestResult} 
-                testCases={problem?.testCases} />
+                <TestResults
+                    runTestsCallback={runTestCases}
+                    codeExecResult={lastTestResult}
+                    testCases={problem?.testCases}
+                />
             </div>
         </div>
     );

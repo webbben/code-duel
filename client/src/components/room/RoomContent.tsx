@@ -5,7 +5,12 @@ import ChatPane from "./ChatPane";
 import { Alert, Snackbar } from "@mui/material";
 import { useAppSelector } from "../../redux/hooks";
 import { RootState } from "../../redux/store";
-import { RoomMessage, RoomUpdate, RoomUpdateTypes, useWebSocket } from "../WebSocketContext";
+import {
+    RoomMessage,
+    RoomUpdate,
+    RoomUpdateTypes,
+    useWebSocket,
+} from "../WebSocketContext";
 import { Link } from "react-router-dom";
 import { routes } from "../../router/router";
 import Game from "./game/Game";
@@ -13,34 +18,40 @@ import { getProblemList, launchGame } from "../../dataProvider";
 import { Room } from "../../dataModels";
 
 interface RoomContentProps {
-    roomData: Room
+    roomData: Room;
 }
 
 export interface ProblemOverview {
-    name: string
-    id: string
-    difficulty: number
-    quickDesc: string
+    name: string;
+    id: string;
+    difficulty: number;
+    quickDesc: string;
 }
 
 export default function RoomContent(props: RoomContentProps) {
-
     const roomData = props.roomData;
-    const username = useAppSelector((state: RootState) => state.userInfo.username);
-    const loggedIn = useAppSelector((state: RootState) => state.userInfo.loggedIn);
-    const idToken = useAppSelector((state: RootState) => state.userInfo.idToken);
+    const username = useAppSelector(
+        (state: RootState) => state.userInfo.username
+    );
+    const loggedIn = useAppSelector(
+        (state: RootState) => state.userInfo.loggedIn
+    );
+    const idToken = useAppSelector(
+        (state: RootState) => state.userInfo.idToken
+    );
 
     // we handle updating the room data in kind of an odd way:
     // roomData is loaded from the database in the wrapper component and passed in here as a prop
     // instead of making state variables for all the different properties of roomData, we are just
     // updating that object directly
     // then, sort of hacky, but triggering a re-render by changing this last update timestamp state variable.
-    const [updateTimestamp, setUpdateTimestamp] = useState('');
+    const [updateTimestamp, setUpdateTimestamp] = useState("");
 
     const [problemOverview, setProblemOverview] = useState<ProblemOverview>();
     const [problemList, setProblemList] = useState<ProblemOverview[]>([]);
 
-    const { handleRoomMessage, connectionOpen, sendRoomMessage } = useWebSocket();
+    const { handleRoomMessage, connectionOpen, sendRoomMessage } =
+        useWebSocket();
 
     async function handleLaunchGame(problemID: string) {
         if (!loggedIn || !idToken || !roomData.id) return;
@@ -75,9 +86,9 @@ export default function RoomContent(props: RoomContentProps) {
         const roomUpdate: RoomUpdate = {
             type: updateType,
             data: {
-                value: updateValue
-            }
-        }
+                value: updateValue,
+            },
+        };
         sendRoomMessage(roomUpdate);
     }
 
@@ -103,7 +114,9 @@ export default function RoomContent(props: RoomContentProps) {
                 }
                 if (roomData.Users.includes(roomUpdate.data.value)) break;
                 roomData.Users.push(roomUpdate.data.value);
-                console.log(`user ${roomUpdate.data.value} has joined the room.`);
+                console.log(
+                    `user ${roomUpdate.data.value} has joined the room.`
+                );
                 break;
             case RoomUpdateTypes.userLeave:
                 if (!roomData.Users) {
@@ -111,7 +124,9 @@ export default function RoomContent(props: RoomContentProps) {
                     return;
                 }
                 if (!roomData.Users.includes(roomUpdate.data.value)) break;
-                roomData.Users = roomData.Users.filter((user) => user !== roomUpdate.data.value);
+                roomData.Users = roomData.Users.filter(
+                    (user) => user !== roomUpdate.data.value
+                );
                 console.log(`user ${roomUpdate.data.value} has left the room.`);
                 break;
             case RoomUpdateTypes.setUserReady:
@@ -124,7 +139,8 @@ export default function RoomContent(props: RoomContentProps) {
                 break;
             case RoomUpdateTypes.changeProblem:
                 console.log("changing problem");
-                const problemOverview = roomUpdate.data.value as ProblemOverview;
+                const problemOverview = roomUpdate.data
+                    .value as ProblemOverview;
                 roomData.Problem = problemOverview?.id || "";
                 setProblemOverview(problemOverview);
                 break;
@@ -140,18 +156,18 @@ export default function RoomContent(props: RoomContentProps) {
         const loadProblems = async () => {
             const loadedProblems = await getProblemList();
             setProblemList(loadedProblems);
-        }
+        };
         loadProblems();
     }, []);
-    
+
     // handle websocket connection
     useEffect(() => {
         if (!connectionOpen) return;
-        const unsubRoomMessages = handleRoomMessage((incomingMessage: RoomMessage) => {
-            console.log("received room update");
-            console.log(incomingMessage);
-            updateRoomInfo(incomingMessage);
-        });
+        const unsubRoomMessages = handleRoomMessage(
+            (incomingMessage: RoomMessage) => {
+                updateRoomInfo(incomingMessage);
+            }
+        );
 
         return () => {
             unsubRoomMessages();
@@ -166,39 +182,58 @@ export default function RoomContent(props: RoomContentProps) {
     // version of it just for in-game events.
     if (roomData.InGame) {
         return (
-            <Game roomData={roomData} token={idToken || ""} username={username || ""} />
+            <Game
+                roomData={roomData}
+                token={idToken || ""}
+                username={username || ""}
+            />
         );
     }
 
     return (
-        <div style={{padding: '20px', height: '100%', display: 'flex', flexDirection: 'row'}}>
+        <div
+            style={{
+                padding: "20px",
+                height: "100%",
+                display: "flex",
+                flexDirection: "row",
+            }}
+        >
             <div className="room_pane">
                 <GameSettings
-                timeLimit={roomData.TimeLimit}
-                updateSetting={handleUpdateRoomSettings}
-                problem={problemOverview}
-                setProblem={setProblemOverview}
-                randomProblem={roomData.RandomProblem}
-                problemList={problemList}
-                isOwner={username === roomData.Owner}
-                launchGameCallback={handleLaunchGame}
-                sendRoomUpdate={sendRoomUpdate}
-                title={roomData.Title}
-                difficulty={roomData.Difficulty}
-                updateSettings={() => console.log('hi')} />
+                    timeLimit={roomData.TimeLimit}
+                    updateSetting={handleUpdateRoomSettings}
+                    problem={problemOverview}
+                    setProblem={setProblemOverview}
+                    randomProblem={roomData.RandomProblem}
+                    problemList={problemList}
+                    isOwner={username === roomData.Owner}
+                    launchGameCallback={handleLaunchGame}
+                    sendRoomUpdate={sendRoomUpdate}
+                    title={roomData.Title}
+                    difficulty={roomData.Difficulty}
+                />
                 <RoomMembers
-                roomID={roomData.id}
-                idToken={idToken}
-                users={roomData.Users}
-                owner={roomData.Owner}
-                maxCapacity={roomData.MaxCapacity} />
+                    roomID={roomData.id}
+                    idToken={idToken}
+                    users={roomData.Users}
+                    owner={roomData.Owner}
+                    maxCapacity={roomData.MaxCapacity}
+                />
             </div>
             <div className="room_pane">
                 <ChatPane username={username} />
             </div>
-            <Snackbar open={!loggedIn} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-                <Alert variant='filled' severity="warning">You're currently not logged in, so you won't be able to participate in this room. <Link to={routes.login}>Login here :)</Link></Alert>
+            <Snackbar
+                open={!loggedIn}
+                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+            >
+                <Alert variant="filled" severity="warning">
+                    You're currently not logged in, so you won't be able to
+                    participate in this room.{" "}
+                    <Link to={routes.login}>Login here :)</Link>
+                </Alert>
             </Snackbar>
         </div>
-    )
+    );
 }

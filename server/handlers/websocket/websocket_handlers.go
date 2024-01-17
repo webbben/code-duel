@@ -69,6 +69,7 @@ func HandleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 
 	defer func() {
 		// Remove the client when the connection is closed
+		log.Printf("Connection closed for %s (%p) in room %s\n", username, conn, room)
 		roomClientsMutex.Lock()
 		if roomClients[room][conn] == false {
 			log.Println("error: connection doesn't exist in room clients map!")
@@ -91,8 +92,7 @@ func HandleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 	roomClients[room][conn] = true
 	roomClientsMutex.Unlock()
 
-	log.Println(fmt.Sprintf("new websocket connection for room %s", room))
-	log.Printf("conn: %p\n", conn)
+	log.Println(fmt.Sprintf("new websocket connection %p for room %s", conn, room))
 
 	// Handle incoming messages
 	for {
@@ -108,8 +108,6 @@ func HandleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 			return
 		}
-
-		log.Printf("received message from client: %s", receivedMessage.Type)
 
 		// we'll handle each message type explicitly to ensure correct info is sent
 		switch receivedMessage.Type {
@@ -138,7 +136,6 @@ func HandleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 			if !authorized {
 				break
 			}
-			log.Printf("(room %s) chat message from %s: %s", receivedMessage.Room, receivedMessage.Sender, receivedMessage.Content)
 			messageToSend := Message{
 				Type:      "chat_message",
 				Room:      receivedMessage.Room,
@@ -153,7 +150,6 @@ func HandleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 			if !authorized {
 				break
 			}
-			log.Printf("(room %s) room update: %s", receivedMessage.Room, receivedMessage.RoomUpdate.Type)
 			messageToSend := Message{
 				Type:       "room_message",
 				Room:       receivedMessage.Room,
@@ -170,8 +166,6 @@ func broadcastMessage(message Message, sendingConnection *websocket.Conn) {
 	roomClientsMutex.Lock()
 	defer roomClientsMutex.Unlock()
 
-	log.Printf("message from conn %p", sendingConnection)
-	log.Printf("broadcasting to room %s: %s", message.Room, message.Type)
 	counter := 0
 
 	for client := range roomClients[message.Room] {
@@ -192,8 +186,6 @@ func broadcastMessage(message Message, sendingConnection *websocket.Conn) {
 		}
 		counter += 1
 	}
-	log.Printf("broadcast to %v clients", counter)
-	fmt.Println(roomClients[message.Room])
 }
 
 // broadcasts when a user joins or leaves a room

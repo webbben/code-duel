@@ -1,4 +1,11 @@
-import React, { ReactNode, createContext, useContext, useEffect, useRef, useState } from "react";
+import React, {
+    ReactNode,
+    createContext,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 import { useAppSelector } from "../redux/hooks";
 import { RootState } from "../redux/store";
 
@@ -8,78 +15,98 @@ interface WebSocketProviderProps {
 }
 interface WebSocketContextType {
     sendChatMessage: (message: string, sender: string) => void;
-    handleChatMessage: (callback: (incomingMessage: ChatMessage) => void) => () => void;
+    handleChatMessage: (
+        callback: (incomingMessage: ChatMessage) => void
+    ) => () => void;
     sendRoomMessage: (roomUpdate: RoomUpdate) => void;
-    handleRoomMessage: (callback: (incomingMessage: RoomMessage) => void) => () => void;
-    handleGameMessage: (callback: (incomingMessage: RoomMessage) => void) => () => void;
+    handleRoomMessage: (
+        callback: (incomingMessage: RoomMessage) => void
+    ) => () => void;
+    handleGameMessage: (
+        callback: (incomingMessage: RoomMessage) => void
+    ) => () => void;
     connectionOpen: boolean;
 }
 export interface ChatMessage {
-    type: string,
-    sender: string,
-    content: string,
-    timestamp: number
+    type: string;
+    sender: string;
+    content: string;
+    timestamp: number;
 }
 
 export interface RoomMessage {
-    type: string,
-    roomupdate: RoomUpdate
-    timestamp: number
+    type: string;
+    roomupdate: RoomUpdate;
+    timestamp: number;
 }
 
 export type Message = RoomMessage | ChatMessage;
 
 export interface RoomUpdate {
-    type: string,
+    type: string;
     /** data will always have a value property, and may have other properties if more context is needed */
-    data: any
+    data: any;
 }
 
 // room updates that can be broadcast to other clients in a room
 export const RoomUpdateTypes = {
-    changeDifficulty: 'CHANGE_DIFFICULTY',
-    changeTimeLimit: 'CHANGE_TIME_LIMIT',
-    changeProblem: 'CHANGE_PROBLEM',
-    randomProblem: 'RANDOM_PROBLEM',
-    setUserReady: 'SET_USER_READY',
-    userLeave: 'USER_LEAVE',
-    userJoin: 'USER_JOIN',
-    launchGame: 'LAUNCH_GAME',
-}
+    changeDifficulty: "CHANGE_DIFFICULTY",
+    changeTimeLimit: "CHANGE_TIME_LIMIT",
+    changeProblem: "CHANGE_PROBLEM",
+    randomProblem: "RANDOM_PROBLEM",
+    setUserReady: "SET_USER_READY",
+    userLeave: "USER_LEAVE",
+    userJoin: "USER_JOIN",
+    launchGame: "LAUNCH_GAME",
+};
 
 // the types of messages that can be broadcast to other clients in a room
 export const messageTypes = {
-    chatMessage: 'chat_message',
-    roomMessage: 'room_message',
-    gameMessage: 'game_message'
-}
+    chatMessage: "chat_message",
+    roomMessage: "room_message",
+    gameMessage: "game_message",
+};
 
-const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
+const WebSocketContext = createContext<WebSocketContextType | undefined>(
+    undefined
+);
 
 /**
  * Gives access to a websocket connection for a room to descendents via the useWebSocket hook
  */
-export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, roomID }) => {
-
+export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
+    children,
+    roomID,
+}) => {
     const ws = useRef<WebSocket | null>(null);
     const [connectionOpen, setConnectionOpen] = useState(false);
     const messageQueue = useRef<Message[]>([]); // enqueue messages if they are unable to be sent
-    const loggedIn = useAppSelector((state: RootState) => state.userInfo.loggedIn);
-    const idToken = useAppSelector((state: RootState) => state.userInfo.idToken);
+    const loggedIn = useAppSelector(
+        (state: RootState) => state.userInfo.loggedIn
+    );
+    const idToken = useAppSelector(
+        (state: RootState) => state.userInfo.idToken
+    );
 
     useEffect(() => {
+        const handleUnmount = () => {
+            if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+                console.log("closing websocket on unmount");
+                ws.current.close();
+            }
+        };
         if (!loggedIn) {
-            console.warn('user not logged in; aborting websocket connection');
+            console.warn("user not logged in; aborting websocket connection");
             return;
         }
         // make sure we don't open multiple sockets for the same client
         if (ws.current) {
-            return;
+            return handleUnmount;
         }
         ws.current = new WebSocket(`ws://localhost:8080/ws?room=${roomID}`);
-        console.warn("setting up new websocket connection");
+        console.log("setting up new websocket connection");
 
-        ws.current.addEventListener('open', (event) => {
+        ws.current.addEventListener("open", (event) => {
             setConnectionOpen(true);
             // send auth info
             if (idToken) {
@@ -87,8 +114,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
                     type: "authorization",
                     content: idToken,
                     sender: "websocket",
-                    timestamp: Date.now()
-                }
+                    timestamp: Date.now(),
+                };
                 sendWebsocketMessage(message);
             }
             // check for queued messages
@@ -97,34 +124,28 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
             }
         });
 
-        ws.current.addEventListener('message', (event) => {
-            console.log("received message over websocket", event.data);
-        });
-
-        ws.current.addEventListener('close', (event) => {
+        ws.current.addEventListener("close", (event) => {
             setConnectionOpen(false);
-            console.log('WebSocket connection closed');
+            console.log("WebSocket connection closed");
         });
 
-        ws.current.addEventListener('error', (error) => {
-            console.log('WebSocket error', error);
+        ws.current.addEventListener("error", (error) => {
+            console.log("WebSocket error", error);
         });
 
-        return () => {
-            if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-                ws.current.close();
-            }
-        };
-    });
+        return handleUnmount;
+    }, [loggedIn]);
 
     /* handles sending a chat message over websocket to other users in the same room */
     const sendChatMessage = (msg: string, sender: string) => {
         if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
-            console.warn('WebSocket connection not open. Message not sent.');
+            console.warn("WebSocket connection not open. Message not sent.");
             return;
         }
-        if (msg.trim() === '' || !sender || sender === "") {
-            console.warn("couldn't send message due to insufficient information")
+        if (msg.trim() === "" || !sender || sender === "") {
+            console.warn(
+                "couldn't send message due to insufficient information"
+            );
             return;
         }
         const timestamp = Date.now();
@@ -133,7 +154,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
             room: roomID,
             content: msg,
             sender: sender,
-            timestamp: timestamp
+            timestamp: timestamp,
         };
         ws.current.send(JSON.stringify(message));
         console.log("sent message", message);
@@ -142,11 +163,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
     /* handles sending a room message over websocket to other users in the same room */
     const sendRoomMessage = (roomUpdate: RoomUpdate) => {
         if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
-            console.warn('WebSocket connection not open. Message not sent.');
+            console.warn("WebSocket connection not open. Message not sent.");
             return;
         }
         if (!roomUpdate || !roomUpdate.data || !roomUpdate.type) {
-            console.warn("couldn't send message due to insufficient information")
+            console.warn(
+                "couldn't send message due to insufficient information"
+            );
             return;
         }
         const timestamp = Date.now();
@@ -154,7 +177,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
             type: messageTypes.roomMessage,
             room: roomID,
             timestamp: timestamp,
-            roomUpdate: roomUpdate
+            roomUpdate: roomUpdate,
         };
         ws.current.send(JSON.stringify(message));
         console.log("sent message", message);
@@ -167,17 +190,21 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
         }
         ws.current.send(JSON.stringify(msg));
         return;
-    }
+    };
 
     const enqueueMessage = (msg: Message) => {
         if (!messageQueue.current) {
             messageQueue.current = [];
         }
         messageQueue.current.push(msg);
-    }
+    };
 
     const sendQueuedMessages = () => {
-        if (!messageQueue.current || !ws.current || ws.current.readyState !== WebSocket.OPEN) {
+        if (
+            !messageQueue.current ||
+            !ws.current ||
+            ws.current.readyState !== WebSocket.OPEN
+        ) {
             return;
         }
         const messages = [...messageQueue.current];
@@ -185,14 +212,16 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
         for (const msg of messages) {
             sendWebsocketMessage(msg);
         }
-    }
+    };
 
     /**
      * function for subscribing and setting the callback behavior for when chat messages are received over websocket. returns the unsubscribe function, for cleanup.
      * @param callback a callback function for handling when messages are received over websocket. probably for updating state in the consuming component.
      * @returns an unsubscribe function to stop listening for messages; call this function when the component unmounts to prevent memory leaks.
      */
-    const handleChatMessage = (callback: (incomingMessage: ChatMessage) => void) => {
+    const handleChatMessage = (
+        callback: (incomingMessage: ChatMessage) => void
+    ) => {
         const listener = (event: MessageEvent) => {
             const receivedMessage = JSON.parse(event.data);
             if (receivedMessage.type !== "chat_message") {
@@ -202,27 +231,26 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
                 type: receivedMessage.type,
                 sender: receivedMessage.sender,
                 content: receivedMessage.content,
-                timestamp: receivedMessage.timestamp
+                timestamp: receivedMessage.timestamp,
             };
-            console.log('Received chat message:', receivedMessage, msg);
             callback(msg);
         };
 
         if (!ws.current) {
             console.warn("failed to add websocket listener for chat");
+        } else {
+            ws.current.addEventListener("message", listener);
         }
-        else {
-            ws.current.addEventListener('message', listener);
-            console.log("listening for chat messages over websocket");
-        }
-    
+
         // Return a cleanup function to unsubscribe when needed
         return () => {
-            ws.current?.removeEventListener('message', listener);
+            ws.current?.removeEventListener("message", listener);
         };
     };
 
-    const handleRoomMessage = (callback: (incomingMessage: RoomMessage) => void) => {
+    const handleRoomMessage = (
+        callback: (incomingMessage: RoomMessage) => void
+    ) => {
         const listener = (event: MessageEvent) => {
             const receivedMessage = JSON.parse(event.data);
             if (receivedMessage.type !== "room_message") {
@@ -231,27 +259,26 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
             const msg: RoomMessage = {
                 type: receivedMessage.type,
                 timestamp: receivedMessage.timestamp,
-                roomupdate: receivedMessage.roomupdate
+                roomupdate: receivedMessage.roomupdate,
             };
-            console.log('Received room message:', receivedMessage, msg);
             callback(msg);
         };
-    
+
         if (!ws.current) {
             console.warn("failed to add websocket listener for room messages");
+        } else {
+            ws.current.addEventListener("message", listener);
         }
-        else {
-            ws.current.addEventListener('message', listener);
-            console.log("listening for room messages over websocket");
-        }
-    
+
         // Return a cleanup function to unsubscribe when needed
         return () => {
-            ws.current?.removeEventListener('message', listener);
+            ws.current?.removeEventListener("message", listener);
         };
     };
 
-    const handleGameMessage = (callback: (incomingMessage: RoomMessage) => void) => {
+    const handleGameMessage = (
+        callback: (incomingMessage: RoomMessage) => void
+    ) => {
         const listener = (event: MessageEvent) => {
             const receivedMessage = JSON.parse(event.data);
             if (receivedMessage.type !== messageTypes.gameMessage) {
@@ -260,23 +287,22 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
             const msg: RoomMessage = {
                 type: receivedMessage.type,
                 timestamp: receivedMessage.timestamp,
-                roomupdate: receivedMessage.roomupdate
+                roomupdate: receivedMessage.roomupdate,
             };
-            console.log('Received game message:', receivedMessage, msg);
+            console.log("Received game message:", receivedMessage, msg);
             callback(msg);
         };
-    
+
         if (!ws.current) {
             console.warn("failed to add websocket listener for game messages");
-        }
-        else {
-            ws.current.addEventListener('message', listener);
+        } else {
+            ws.current.addEventListener("message", listener);
             console.log("listening for game messages over websocket");
         }
-    
+
         // Return a cleanup function to unsubscribe when needed
         return () => {
-            ws.current?.removeEventListener('message', listener);
+            ws.current?.removeEventListener("message", listener);
         };
     };
 
@@ -286,20 +312,20 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
         sendRoomMessage,
         handleRoomMessage,
         handleGameMessage,
-        connectionOpen
+        connectionOpen,
     };
 
     return (
         <WebSocketContext.Provider value={contextValue}>
-            { children } 
+            {children}
         </WebSocketContext.Provider>
     );
-}
+};
 
 export const useWebSocket = () => {
     const context = useContext(WebSocketContext);
     if (!context) {
-        throw new Error('useWebSocket must be used within a WebSocketProvider');
+        throw new Error("useWebSocket must be used within a WebSocketProvider");
     }
     return context;
-  };
+};
