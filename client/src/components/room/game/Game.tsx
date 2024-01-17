@@ -44,26 +44,6 @@ export default function Game(props: GameProps) {
     const [problem, setProblem] = useState<Problem | null>(null);
     const [lastTestResult, setLastTestResult] = useState<codeExecResponse>();
 
-    // define the problem ID here since there are technically two places the problem ID could be retrieved from
-    // TODO redo logic on getting problem/problem ID for room?
-    const problemID: string = problem
-        ? problem.id
-        : props.roomData
-        ? props.roomData.Problem
-        : "";
-    if (problemID === "") {
-        console.warn("no problem ID found for game!");
-    }
-    if (problem && props.roomData?.Problem) {
-        if (problem.id !== props.roomData.Problem) {
-            console.warn(
-                "problem ID on problem object doesn't match problem ID on room object?",
-                `problem obj: ${problem.id}`,
-                `room obj: ${props.roomData.Problem}`
-            );
-        }
-    }
-
     const [userProgress, setUserProgress] = useState<UserProgress>(() => {
         // initialize all scores to zero
         const initialScores: UserProgress = {};
@@ -91,14 +71,14 @@ export default function Game(props: GameProps) {
     }
 
     async function runTestCases() {
-        if (code === "") {
+        if (code === "" || !problem || problem.id === "") {
             console.warn("there's no code to test");
             return;
         }
         const testResults = await testCode(
             code,
             langMapServer[lang],
-            problemID,
+            problem.id,
             props.token,
             props.roomData.id,
             true
@@ -142,14 +122,15 @@ export default function Game(props: GameProps) {
 
     // handle loading code template
     useEffect(() => {
-        if (!lang || !problemID) return;
+        if (!lang || !problem || problem.id === "") return;
 
         async function loadCodeTemplate() {
-            const template = await loadProblemTemplate(problemID, lang);
+            if (!problem) return;
+            const template = await loadProblemTemplate(problem.id, lang);
             setCode(template || "");
         }
         loadCodeTemplate();
-    }, [lang, problemID]);
+    }, [lang, problem]);
 
     // load game room data
     useEffect(() => {
@@ -161,7 +142,7 @@ export default function Game(props: GameProps) {
             setProblem(problemData);
         }
         loadProblem();
-    }, [problemID]);
+    });
 
     return (
         <div
