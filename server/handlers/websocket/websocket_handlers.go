@@ -150,6 +150,9 @@ func HandleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 			if !authorized {
 				break
 			}
+			// update room in firestore if applicable
+			go updateRoom(receivedMessage, room)
+
 			messageToSend := Message{
 				Type:       "room_message",
 				Room:       receivedMessage.Room,
@@ -157,6 +160,42 @@ func HandleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 				RoomUpdate: receivedMessage.RoomUpdate,
 			}
 			broadcastMessage(messageToSend, conn)
+		}
+	}
+}
+
+// check for updates in room messages that we want to forward to firestore
+func updateRoom(receivedMessage Message, roomID string) {
+	var update map[string]interface{}
+	switch receivedMessage.RoomUpdate.Type {
+	case "CHANGE_DIFFICULTY":
+		update = map[string]interface{}{
+			"Difficulty": receivedMessage.RoomUpdate.Data["value"],
+		}
+	case "CHANGE_TIME_LIMIT":
+		update = map[string]interface{}{
+			"TimeLimit": receivedMessage.RoomUpdate.Data["value"],
+		}
+	case "CHANGE_PROBLEM":
+		dataValue, ok := receivedMessage.RoomUpdate.Data["value"].(map[string]interface{})
+		if !ok {
+			// client sent unexpected data
+			log.Printf("Error while updating room problem: data received from client socket is of unexpected format.")
+			return
+		}
+		update = map[string]interface{}{
+			"Problem": dataValue["id"],
+		}
+	case "RANDOM_PROBLEM":
+		update = map[string]interface{}{
+			"RandomProblem": receivedMessage.RoomUpdate.Data["value"],
+			"Problem": "",
+		}
+	}
+	if update != nil {
+		err := rooms.UpdateRoom(roomID, update);
+		if err != nil {
+			log.Printf("Error while sending room update: %s", err)
 		}
 	}
 }
@@ -253,6 +292,7 @@ func broadcastGameOver(roomID string, winner string) {
 // Note: make sure to UNLOCK gameStateMap before calling this!
 // failure to do so will cause deadlock
 func handleGameOver(roomID string, winner string) {
+	log.Printf("Game over!\n");
 	// broadcast game over to clients
 	broadcastGameOver(roomID, winner)
 
@@ -334,7 +374,10 @@ func onGameTick(roomID string) bool {
 	// increment time elapsed
 	gameStateMapMutex.Lock()
 	gameState.TimeElapsed++
+	gameStateMap[roomID] = gameState
 	gameStateMapMutex.Unlock()
+
+	log.Printf("Tick... Time elapsed: %v/%v\n", gameState.TimeElapsed, gameState.TimeLimit)
 
 	if gameState.TimeElapsed >= gameState.TimeLimit {
 		// time expired! game over

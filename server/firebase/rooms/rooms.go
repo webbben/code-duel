@@ -34,6 +34,7 @@ func CreateRoom(request *models.CreateRoomRequest, username string) (roomID stri
 		Status:      "waiting",
 		ReqPassword: request.ReqPassword,
 		Password:    request.Password,
+		TimeLimit:   30,
 	}
 	docRef, _, err := firestoreClient.Collection("rooms").Add(ctx, room)
 	if err != nil {
@@ -162,4 +163,20 @@ func SetupGameContext(roomID string, problemID string) error {
 		{Path: "Problem", Value: problemID},
 	}
 	return firebase.UpdateDocument("rooms", roomID, updates)
+}
+
+// send a batch of updates to firestore for a given room
+//
+// an update should be a map where the key is the "path" (the name of the property) 
+// and the value is the new updated value.
+func UpdateRoom(roomID string, updates map[string]interface{}) error {
+	firestoreUpdates := make([]firestore.Update, len(updates))
+	i := 0
+	for key, value := range updates {
+		firestoreUpdates[i] = firestore.Update{
+			Path: key, Value: value,
+		}
+		i++
+	}
+	return firebase.UpdateDocument("rooms", roomID, firestoreUpdates)
 }

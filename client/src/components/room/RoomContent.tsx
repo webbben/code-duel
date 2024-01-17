@@ -154,8 +154,16 @@ export default function RoomContent(props: RoomContentProps) {
     // load problems
     useEffect(() => {
         const loadProblems = async () => {
-            const loadedProblems = await getProblemList();
+            const loadedProblems: ProblemOverview[] = await getProblemList();
             setProblemList(loadedProblems);
+            // set the problem too if it's not set yet and we know the problem ID
+            if (!problemOverview && props.roomData?.Problem !== "") {
+                setProblemOverview(
+                    loadedProblems.find(
+                        (prob) => prob.id === props.roomData.Problem
+                    )
+                );
+            }
         };
         loadProblems();
     }, []);
