@@ -35,7 +35,7 @@ interface GameProps {
     username: string;
 }
 
-interface UserProgress {
+export interface UserProgress {
     [username: string]: number;
 }
 
@@ -168,7 +168,10 @@ export default function Game(props: GameProps) {
             }}
         >
             <div className="room_pane">
-                <ProblemDetails problem={problem} />
+                <ProblemDetails
+                    problem={problem}
+                    timeLimit={props.roomData.TimeLimit}
+                />
                 <div className="game_section" style={{ flex: "0 1 auto" }}>
                     <Typography>Player Info</Typography>
                     {props.roomData?.Users?.map((user: string) => {
@@ -223,7 +226,13 @@ export default function Game(props: GameProps) {
                     testCases={problem?.testCases}
                 />
             </div>
-            {gameOver.gameOver && <GameOver winner={gameOver.winner} />}
+            {gameOver.gameOver && (
+                <GameOver
+                    winner={gameOver.winner}
+                    users={props.roomData.Users}
+                    progress={userProgress}
+                />
+            )}
         </div>
     );
 }
