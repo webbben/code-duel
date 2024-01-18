@@ -89,7 +89,7 @@ func codeSubmission(w http.ResponseWriter, r *http.Request, fullTest bool) {
 		"testCount":    testCount,
 		"errorMessage": errorMessage,
 	}
-	websocket.UpdateGameState(claims.DisplayName, req.RoomID, "SUBMIT_CODE_RESULT", map[string]interface{}{
+	websocket.UpdateGameState(claims.DisplayName, req.RoomID, "CODE_SUBMIT_RESULT", map[string]interface{}{
 		"passCount": passCount,
 	})
 	general.WriteResponse(w, true, response)

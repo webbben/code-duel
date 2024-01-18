@@ -13,6 +13,7 @@ import {
 } from "../../../dataProvider";
 import { Problem, Room } from "../../../dataModels";
 import TestResults from "./TestResults";
+import GameOver from "./GameOver";
 
 const langMapEditor: { [id: string]: string } = {
     py: "python",
@@ -43,6 +44,7 @@ export default function Game(props: GameProps) {
     const [code, setCode] = useState<string>("");
     const [problem, setProblem] = useState<Problem | null>(null);
     const [lastTestResult, setLastTestResult] = useState<codeExecResponse>();
+    const [gameOver, setGameOver] = useState({ gameOver: false, winner: "" });
 
     const [userProgress, setUserProgress] = useState<UserProgress>(() => {
         // initialize all scores to zero
@@ -94,6 +96,12 @@ export default function Game(props: GameProps) {
             return;
         }
         const roomUpdate = msg.roomupdate;
+
+        // game over
+        if (roomUpdate.type === "GAME_OVER") {
+            setGameOver({ gameOver: true, winner: roomUpdate.data.value });
+            return;
+        }
 
         // update for a user's progress
         if (roomUpdate.type === "CODE_SUBMIT_RESULT") {
@@ -177,7 +185,7 @@ export default function Game(props: GameProps) {
                     className="game_section"
                     style={{
                         flex: "1 1 auto",
-                        minHeight: "70%",
+                        minHeight: "50%",
                         display: "flex",
                         flexDirection: "column",
                     }}
@@ -215,6 +223,7 @@ export default function Game(props: GameProps) {
                     testCases={problem?.testCases}
                 />
             </div>
+            {gameOver.gameOver && <GameOver winner={gameOver.winner} />}
         </div>
     );
 }

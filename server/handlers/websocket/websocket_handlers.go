@@ -292,7 +292,7 @@ func broadcastGameOver(roomID string, winner string) {
 // Note: make sure to UNLOCK gameStateMap before calling this!
 // failure to do so will cause deadlock
 func handleGameOver(roomID string, winner string) {
-	log.Printf("Game over!\n");
+	log.Printf("Game over for room %s\n", roomID);
 	// broadcast game over to clients
 	broadcastGameOver(roomID, winner)
 
@@ -306,7 +306,6 @@ func handleGameOver(roomID string, winner string) {
 // when a user submits code, update game state with the results and check for a winner
 func UpdateGameState(username string, roomID string, updateType string, updateData map[string]interface{}) {
 	gameStateMapMutex.Lock()
-
 	gameState, exists := gameStateMap[roomID]
 	if !exists {
 		log.Printf("Failed to get gamestate for room %s", roomID)
@@ -323,7 +322,12 @@ func UpdateGameState(username string, roomID string, updateType string, updateDa
 	switch updateType {
 	// update a users test case results
 	case "CODE_SUBMIT_RESULT":
-		passCount := updateData["value"]
+		log.Println("code submit result", updateData)
+		passCount := updateData["passCount"]
+		if passCount == nil {
+			log.Println("Error updating game state: failed to receive passCount from updateData", updateData)
+			break
+		}
 		gameState.UserProgress[username] = passCount.(int)
 		messageToSend.RoomUpdate = RoomUpdate{
 			Type: updateType,
@@ -371,6 +375,13 @@ func onGameTick(roomID string) bool {
 		return true
 	}
 
+	// check if any users are in the room still - if not, delete the game
+	if (rooms.GetUserCount(roomID) == 0) {
+		log.Println("No users in game; ending game...")
+		handleGameOver(roomID, "")
+		return true
+	}
+
 	// increment time elapsed
 	gameStateMapMutex.Lock()
 	gameState.TimeElapsed++
@@ -398,12 +409,12 @@ func StartGame(roomID string, roomData models.Room) {
 	}
 	// make sure there isn't an existing game for this room
 	// if there is, this room has probably already run a game before and cleanup hasn't happened yet for some reason
-	// probably best to refuse to start a new game, just to make sure an ongoing game doesn't lose its data
 	gameStateMapMutex.Lock()
 	if _, exists := gameStateMap[roomID]; exists {
-		log.Printf("Error starting game: a game state for room %s already exists!\n", roomID)
+		log.Printf("Warning: a game state for room %s already exists; ending that game to start a new one.\n", roomID)
 		gameStateMapMutex.Unlock()
-		return
+		// end the existing game so we can start a new one
+		handleGameOver(roomID, gameStateMap[roomID].Winner)
 	}
 
 	// start a ticker to keep track of time limit
@@ -429,6 +440,7 @@ func StartGame(roomID string, roomData models.Room) {
 
 	// notify other members of the room that the game is starting
 	broadcastLaunchGame(roomID)
+	log.Printf("Game started for room %s\n", roomID)
 
 	gameOver := false
 

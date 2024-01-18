@@ -180,3 +180,14 @@ func UpdateRoom(roomID string, updates map[string]interface{}) error {
 	}
 	return firebase.UpdateDocument("rooms", roomID, firestoreUpdates)
 }
+
+func GetUserCount(roomID string) int {
+	room, err := GetRoom(roomID)
+	if err != nil {
+		return 0
+	}
+	if room == nil {
+		return 0
+	}
+	return len(room.Users)
+}
