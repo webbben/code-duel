@@ -70,12 +70,12 @@ export default function Game(props: GameProps) {
     }
 
     function handleChangeCode(codeString: string | undefined) {
-        if (gameOver) return;
+        if (gameOver.gameOver) return;
         setCode(codeString || "");
     }
 
     async function runTestCases() {
-        if (gameOver) return;
+        if (gameOver.gameOver) return;
         if (code === "" || !problem || problem.id === "") {
             console.warn("there's no code to test");
             return;
