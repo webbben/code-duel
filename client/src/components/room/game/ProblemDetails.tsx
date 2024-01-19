@@ -12,7 +12,7 @@ export default function ProblemDetails(props: ProblemDetailsProps) {
         return (
             <div
                 className="game_section"
-                style={{ flex: "1 1 auto", minHeight: "60%" }}
+                style={{ flex: "1 1 auto" }}
             >
                 <Typography>No problem data...</Typography>
             </div>
@@ -22,7 +22,7 @@ export default function ProblemDetails(props: ProblemDetailsProps) {
     return (
         <div
             className="game_section"
-            style={{ flex: "1 1 auto", minHeight: "60%", textAlign: "left" }}
+            style={{ flex: "1 1 auto", textAlign: "left" }}
         >
             <div
                 style={{

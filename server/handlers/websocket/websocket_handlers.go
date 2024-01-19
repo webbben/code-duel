@@ -50,6 +50,15 @@ var (
 	gameStateMapMutex sync.Mutex
 )
 
+// checks if a given room has any client connections
+func RoomHasClients(roomID string) bool {
+	connMap := roomClients[roomID]
+	if connMap == nil {
+		return false
+	}
+	return len(connMap) != 0
+} 
+
 func HandleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {

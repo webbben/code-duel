@@ -35,6 +35,7 @@ func GetOverview() models.ProblemOverview {
 }
 
 func GetProblem() models.Problem {
+	problem.CaseCount = len(problem.TestCases) + len(problem.FullCases)
 	return problem
 }
 

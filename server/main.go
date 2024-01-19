@@ -85,12 +85,16 @@ func scheduledJobs() {
 	defer ticker.Stop()
 
 	// tasks to run on server start-up
+	log.Println("SCHED: Performing jobs on server startup...")
 	cleanupEmptyRooms()
+	log.Println("SCHED: Server startup jobs complete.")
 
 	select {
 	case <-ticker.C:
 		// tasks to run on an hourly basis
+		log.Println("SCHED: Performing hourly jobs...")
 		cleanupEmptyRooms()
+		log.Println("SCHED: Hourly jobs complete.")
 	}
 }
 
@@ -104,6 +108,16 @@ func cleanupEmptyRooms() {
 	delCount := 0
 	for _, room := range rooms {
 		if len(room.Users) == 0 {
+			_, err := firebase.DeleteDocument("rooms", room.ID)
+			if err != nil {
+				log.Printf("error during room cleanup: failed to delete room %s; %v\n", room.ID, err)
+			} else {
+				delCount++
+			}
+			continue
+		}
+		// check that each room actually has client connections still, and aren't orphaned w/ incorrect user counts
+		if !websocket.RoomHasClients(room.ID) {
 			_, err := firebase.DeleteDocument("rooms", room.ID)
 			if err != nil {
 				log.Printf("error during room cleanup: failed to delete room %s; %v\n", room.ID, err)

@@ -1,10 +1,11 @@
 export interface Problem {
-    id: string
-    name: string
-    difficulty: number
-    fullDesc: string
-    quickDesc: string
-    testCases: any[]
+    id: string;
+    name: string;
+    difficulty: number;
+    fullDesc: string;
+    quickDesc: string;
+    testCases: any[];
+    caseCount: number;
 }
 
 export interface Room {

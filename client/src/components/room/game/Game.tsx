@@ -14,6 +14,7 @@ import {
 import { Problem, Room } from "../../../dataModels";
 import TestResults from "./TestResults";
 import GameOver from "./GameOver";
+import PlayerInfo from "./PlayerInfo";
 
 const langMapEditor: { [id: string]: string } = {
     py: "python",
@@ -69,10 +70,12 @@ export default function Game(props: GameProps) {
     }
 
     function handleChangeCode(codeString: string | undefined) {
+        if (gameOver) return;
         setCode(codeString || "");
     }
 
     async function runTestCases() {
+        if (gameOver) return;
         if (code === "" || !problem || problem.id === "") {
             console.warn("there's no code to test");
             return;
@@ -172,23 +175,13 @@ export default function Game(props: GameProps) {
                     problem={problem}
                     timeLimit={props.roomData.TimeLimit}
                 />
-                <div className="game_section" style={{ flex: "0 1 auto" }}>
-                    <Typography>Player Info</Typography>
-                    {props.roomData?.Users?.map((user: string) => {
-                        return (
-                            <Typography
-                                key={user}
-                            >{`${user} | progress: ${userProgress[user]}`}</Typography>
-                        );
-                    })}
-                </div>
+                <PlayerInfo users={props.roomData?.Users} progressMap={userProgress} caseCount={problem?.caseCount || 0} />
             </div>
             <div className="room_pane">
                 <div
                     className="game_section"
                     style={{
                         flex: "1 1 auto",
-                        minHeight: "50%",
                         display: "flex",
                         flexDirection: "column",
                     }}
@@ -231,6 +224,7 @@ export default function Game(props: GameProps) {
                     winner={gameOver.winner}
                     users={props.roomData.Users}
                     progress={userProgress}
+                    caseCount={problem?.caseCount || 0}
                 />
             )}
         </div>

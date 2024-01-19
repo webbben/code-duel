@@ -58,6 +58,7 @@ type Problem struct {
 	FullDesc  string     `json:"fullDesc"`
 	TestCases []TestCase `json:"testCases"`
 	FullCases []TestCase `json:"-"`
+	CaseCount int        `json:"caseCount"`
 }
 
 type TestCase []any

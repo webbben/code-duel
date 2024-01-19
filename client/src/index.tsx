@@ -11,6 +11,7 @@ import { getAnalytics } from "firebase/analytics";
 import { firebaseAPIKey } from './private';
 import { Provider } from 'react-redux';
 import { store } from './redux/store';
+import { browserSessionPersistence, getAuth, setPersistence } from 'firebase/auth';
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -30,6 +31,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 //const analytics = getAnalytics(app);
 console.log(`Initialized firebase app ${app.name}`);
+
+// set persistence for logins
+const auth = getAuth(app);
+setPersistence(auth, browserSessionPersistence);
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

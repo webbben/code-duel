@@ -46,7 +46,7 @@ export default function TestResults(props: TestResultsProps) {
                 style={{
                     backgroundColor: "black",
                     color: color,
-                    height: "100px",
+                    height: "150px",
                 }}
             >
                 <CardContent>
