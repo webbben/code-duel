@@ -57,7 +57,7 @@ func RoomHasClients(roomID string) bool {
 		return false
 	}
 	return len(connMap) != 0
-} 
+}
 
 func HandleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -198,11 +198,11 @@ func updateRoom(receivedMessage Message, roomID string) {
 	case "RANDOM_PROBLEM":
 		update = map[string]interface{}{
 			"RandomProblem": receivedMessage.RoomUpdate.Data["value"],
-			"Problem": "",
+			"Problem":       "",
 		}
 	}
 	if update != nil {
-		err := rooms.UpdateRoom(roomID, update);
+		err := rooms.UpdateRoom(roomID, update)
 		if err != nil {
 			log.Printf("Error while sending room update: %s", err)
 		}
@@ -301,7 +301,7 @@ func broadcastGameOver(roomID string, winner string) {
 // Note: make sure to UNLOCK gameStateMap before calling this!
 // failure to do so will cause deadlock
 func handleGameOver(roomID string, winner string) {
-	log.Printf("Game over for room %s\n", roomID);
+	log.Printf("Game over for room %s\n", roomID)
 	// broadcast game over to clients
 	broadcastGameOver(roomID, winner)
 
@@ -362,13 +362,14 @@ func UpdateGameState(username string, roomID string, updateType string, updateDa
 	gameStateMap[roomID] = gameState
 	gameStateMapMutex.Unlock()
 
+	// send update to clients
+	broadcastMessage(messageToSend, nil)
+
 	// check for win condition
 	if currentWinnerScore == gameState.TotalCases {
 		gameState.GameOver = true
 		handleGameOver(roomID, currentWinner)
-		return
 	}
-	broadcastMessage(messageToSend, nil)
 }
 
 // check for time expiration and end the game if so
@@ -385,7 +386,7 @@ func onGameTick(roomID string) bool {
 	}
 
 	// check if any users are in the room still - if not, delete the game
-	if (rooms.GetUserCount(roomID) == 0) {
+	if rooms.GetUserCount(roomID) == 0 {
 		log.Println("No users in game; ending game...")
 		handleGameOver(roomID, "")
 		return true
