@@ -22,6 +22,7 @@ var problem = models.Problem{
 	FullCases: []models.TestCase{
 		{"abcdefghijklmnopqrstuvwxyz", "abcdefghijklmnopqrstuvwxyz"},
 		{1234567890, "1234567890"},
+		{"abcdefghijklmnopqrstuvwxyzABCDEFGHIJ", "abcdefghijklmnopqrstuvwxyzABCDEFGHIJ"},
 		{"ok do we really need to write test cases for this...", "ok do we really need to write test cases for this..."},
 		{1.1, "1.1"},
 	},
