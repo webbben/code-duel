@@ -20,7 +20,7 @@ import (
 // languages we know our code execution service supports
 var supportedLangs []string = []string{"python", "go", "bash"}
 
-var codeExecURL = "http://localhost:8081/"
+var codeExecURL = "https://code-exec-microservice.fly.dev/"
 
 type CodeSubmitRequest struct {
 	ProblemID string `json:"problemID"`
