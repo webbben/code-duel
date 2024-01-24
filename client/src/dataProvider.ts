@@ -1,7 +1,7 @@
 import { Problem, Room } from "./dataModels";
 
 /** URL where our server API endpoints can be accessed */
-export const serverURL = 'http://localhost:8080';
+export const serverURL = 'https://code-duel-server.fly.dev';
 
 /**
  * Gets the list of rooms - used in the lobby for listing all rooms a user can join.

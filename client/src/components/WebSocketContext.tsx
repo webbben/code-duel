@@ -71,6 +71,8 @@ const WebSocketContext = createContext<WebSocketContextType | undefined>(
     undefined
 );
 
+const serverUrl = 'code-duel-server.fly.dev';
+
 /**
  * Gives access to a websocket connection for a room to descendents via the useWebSocket hook
  */
@@ -103,7 +105,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         if (ws.current) {
             return handleUnmount;
         }
-        ws.current = new WebSocket(`ws://localhost:8080/ws?room=${roomID}`);
+        ws.current = new WebSocket(`ws://${serverUrl}/ws?room=${roomID}`);
         console.log("setting up new websocket connection");
 
         ws.current.addEventListener("open", (event) => {
