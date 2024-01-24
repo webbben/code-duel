@@ -7,8 +7,6 @@ import { router } from './router/router';
 
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import { firebaseAPIKey } from './private';
 import { Provider } from 'react-redux';
 import { store } from './redux/store';
 import { browserSessionPersistence, getAuth, setPersistence } from 'firebase/auth';
@@ -18,7 +16,7 @@ import { browserSessionPersistence, getAuth, setPersistence } from 'firebase/aut
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: firebaseAPIKey,
+  apiKey: process.env.FIREBASE_API_KEY,
   authDomain: "code-duel-dd410.firebaseapp.com",
   projectId: "code-duel-dd410",
   storageBucket: "code-duel-dd410.appspot.com",
