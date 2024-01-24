@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
@@ -18,17 +19,37 @@ var firestoreClient *firestore.Client = nil
 var authClient *auth.Client = nil
 
 func init() {
-	// Use a service account
+	// get firebase vars and put together the credentials JSON
+	projectID := os.Getenv("FIREBASE_PROJECT_ID")
+	clientEmail := os.Getenv("FIREBASE_CLIENT_EMAIL")
+	privateKey := os.Getenv("FIREBASE_PRIVATE_KEY")
+	if projectID == "" || clientEmail == "" || privateKey == "" {
+		fmt.Println("One or more firebase environment variables is missing")
+		return
+	}
 	ctx := context.Background()
-	sa := option.WithCredentialsFile("/Users/benwebb/Dev/Projects/code-duel/server/firebase/credentials.json")
-	app, err := firebase.NewApp(ctx, nil, sa)
+	opt := option.WithCredentialsJSON([]byte(fmt.Sprintf(`{
+		"type": "service_account",
+		"project_id": "%s",
+		"private_key_id": "a38cda0726982f1f98fdf992e97bde9698303b52",
+		"private_key": "%s",
+		"client_email": "%s",
+		"client_id": "101472714036584736551",
+		"auth_uri": "https://accounts.google.com/o/oauth2/auth",
+		"token_uri": "https://oauth2.googleapis.com/token",
+		"auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+		"client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-z09pt%%40code-duel-dd410.iam.gserviceaccount.com",
+		"universe_domain": "googleapis.com"
+	}`, projectID, privateKey, clientEmail)))
+
+	app, err := firebase.NewApp(ctx, nil, opt)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("failed to create firebase app:", err)
 	}
 
 	firestoreClient, err = app.Firestore(ctx)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("failed to connect to firestore client:", err)
 	}
 
 	authClient, err = app.Auth(ctx)
