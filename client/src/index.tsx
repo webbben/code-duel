@@ -15,8 +15,14 @@ import { browserSessionPersistence, getAuth, setPersistence } from 'firebase/aut
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+
+const firebaseApiKey = process.env.REACT_APP_FIREBASE_API_KEY;
+if (!firebaseApiKey || firebaseApiKey === "") {
+  console.error("env variable FIREBASE_API_KEY not found.");
+}
+
 const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
+  apiKey: firebaseApiKey,
   authDomain: "code-duel-dd410.firebaseapp.com",
   projectId: "code-duel-dd410",
   storageBucket: "code-duel-dd410.appspot.com",
