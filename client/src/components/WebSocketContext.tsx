@@ -105,7 +105,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         if (ws.current) {
             return handleUnmount;
         }
-        ws.current = new WebSocket(`ws://${serverUrl}/ws?room=${roomID}`);
+        ws.current = new WebSocket(`wss://${serverUrl}/ws?room=${roomID}`);
         console.log("setting up new websocket connection");
 
         ws.current.addEventListener("open", (event) => {
