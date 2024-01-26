@@ -1,6 +1,10 @@
 package problem_02
 
-import "github.com/webbben/code-duel/models"
+import (
+	"math"
+
+	"github.com/webbben/code-duel/models"
+)
 
 var problem = models.Problem{
 	ProblemOverview: models.ProblemOverview{
@@ -13,17 +17,21 @@ var problem = models.Problem{
 	TestCases: []models.TestCase{
 		{[]int{1, 2, 3, 4, 5}, 4},
 		{[]int{5, 4, 3, 2, 1}, 0},
-		{[]int{6, 2, 3, 8, 1}, 7},
+		{[]int{6, 2, 3, 8, 1}, 6},
 	},
 	FullCases: []models.TestCase{
 		{[]int{}, 0},
-		{[]int{0, 9, 0, 9, 0, 1, 0, 20}, 20},
-		{[]int{20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 9, 7, 6, 5, 4, 3, 2, 1}, 1},
-		{[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0},
-		{[]int{5, 56, 44, 85, 23, 46, 1000, 54, 24, 78, 12, 600, 900, 45}, 995},
 		{[]int{1}, 0},
-		{[]int{6, 4, 7, 9, 4, 3, 5, 6, 8, 6, 4, 3, 5, 6, 8, 9, 7, 5, 4, 3, 4, 6, 7, 9, 7, 5, 34, 23, 4, 5, 7, 8, 9, 7, 5, 4, 3, 24, 5, 7, 3, 2, 4, 6, 0, 90}, 90},
-		{[]int{345, 567, 234, 678, 534, 654, 423, 765, 321, 654, 423, 987, 765, 543, 47, 532, 98, 12, 54, 987, 234, 567}, 975},
+		{[]int{7, 1, 5, 3, 6, 4}, 5},
+		{[]int{1, 2, 3, 4, 5}, 4},
+		{[]int{7, 6, 4, 3, 1}, 0},
+		{[]int{3, 3, 3, 3, 3, 3, 3, 3, 3, 3}, 0},
+		{[]int{2, 1, 4, 6, 2, 3}, 5},
+		{[]int{7, 1, 5, 3, 6, 4, 9, 8}, 8},
+		{[]int{1, 7, 8, 3, 6, 4, 9, 8}, 8},
+		{[]int{10, 9, 8, 7, 6, 5, 4, 3, 2, 1}, 0},
+		{[]int{1, 2, 3, 2, 3, 4, 3, 4, 5}, 4},
+		{[]int{3, 2, 1, 4, 5, 6, 7, 8}, 7},
 	},
 	ProblemFunc: models.ProblemFunc{
 		GetTemplate: GetProblemTemplate,
@@ -91,4 +99,46 @@ func GetProblemTemplate(lang string) string {
 	default:
 		return ""
 	}
+}
+
+/*
+ * ====================================================================
+ * Sample Solution
+ * Make a solution to the problem - to confirm its actually solvable!
+ * This should be unit tested with the test cases
+ * ====================================================================
+ */
+
+func sampleSolution(prices []int) int {
+	if len(prices) < 2 {
+		// Not enough days to make a profit
+		return 0
+	}
+
+	minPrice := math.MaxInt64
+	maxProfit := 0
+
+	for _, price := range prices {
+		// Update the minimum stock price if a lower price is encountered
+		minPrice = min(minPrice, price)
+
+		// Update the maximum profit if a better selling opportunity is found
+		maxProfit = max(maxProfit, price-minPrice)
+	}
+
+	return maxProfit
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
