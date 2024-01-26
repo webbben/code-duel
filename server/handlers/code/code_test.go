@@ -40,7 +40,7 @@ func TestFormatInputGo(t *testing.T) {
 func TestFormatInputBash(t *testing.T) {
 	var testCases = []FormatInputTestCase{
 		{Input: []int{1, 2, 3, 4, 5}, Lang: "bash", Expected: "[1 2 3 4 5]"},
-		{Input: []float64{1.1, 2.2, 3.3, 4.4, 5.5}, Lang: "python", Expected: "[1.1 2.2 3.3 4.4 5.5]"},
+		{Input: []float64{1.1, 2.2, 3.3, 4.4, 5.5}, Lang: "bash", Expected: "[1.1 2.2 3.3 4.4 5.5]"},
 		{Input: []string{"hi", "bye", "yes", "no"}, Lang: "bash", Expected: "[\"hi\" \"bye\" \"yes\" \"no\"]"},
 		{Input: true, Lang: "bash", Expected: "true"},
 		{Input: false, Lang: "bash", Expected: "false"},
@@ -55,7 +55,7 @@ func runTestsFormatInput(testCases []FormatInputTestCase, t *testing.T) {
 	for i, testCase := range testCases {
 		testName := fmt.Sprintf("FormatInput test %v", i)
 		t.Run(testName, func(t *testing.T) {
-			inputFmt := formatInput(testCase.Lang, testCase.Input)
+			inputFmt := formatInput(testCase.Lang, testCase.Input, false)
 			if inputFmt != testCase.Expected {
 				t.Errorf("Result: [%s] Expected: [%s]", inputFmt, testCase.Expected)
 			}

@@ -115,6 +115,9 @@ func AddOrRemoveUser(username string, roomID string, add bool) error {
 func GetRoom(roomID string) (*models.Room, error) {
 	ctx := context.Background()
 	firestoreClient := firebase.GetFirestoreClient()
+	if firestoreClient == nil {
+		return nil, errors.New("GetRoom: failed to get firestore client")
+	}
 	snapshot, err := firestoreClient.Collection("rooms").Doc(roomID).Get(ctx)
 	if err != nil {
 		return nil, err
@@ -130,6 +133,9 @@ func GetRoom(roomID string) (*models.Room, error) {
 
 func GetRooms() ([]models.Room, error) {
 	firestoreClient := firebase.GetFirestoreClient()
+	if firestoreClient == nil {
+		return nil, errors.New("GetRooms: failed to get firestore client")
+	}
 	collectionRef := firestoreClient.Collection("rooms")
 	if collectionRef == nil {
 		return nil, errors.New("failed to get collection ref")
@@ -167,7 +173,7 @@ func SetupGameContext(roomID string, problemID string) error {
 
 // send a batch of updates to firestore for a given room
 //
-// an update should be a map where the key is the "path" (the name of the property) 
+// an update should be a map where the key is the "path" (the name of the property)
 // and the value is the new updated value.
 func UpdateRoom(roomID string, updates map[string]interface{}) error {
 	firestoreUpdates := make([]firestore.Update, len(updates))

@@ -50,8 +50,8 @@ var pythonTemplate = `
 def solution(stockPrices):
 	# write your solution here
 
-# don't change this or your code may not compile correctly!
-solution(%s)
+# don't change this or your code may not run correctly!
+print(solution(%s))
 `
 
 var goTemplate = `
@@ -60,7 +60,7 @@ package main
 import "fmt"
 
 func main() {
-	// don't change this or your code may not compile correctly!
+	// don't change this or your code may not run correctly!
 	fmt.Print(solution(%s))
 }
 
@@ -75,8 +75,9 @@ solution () {
 	stockPrices=$1
 }
 
-# don't change this or your code may not compile correctly!
-solution %s
+# don't change this or your code may not run correctly!
+output=solution %s
+echo $output
 `
 
 func GetProblemTemplate(lang string) string {

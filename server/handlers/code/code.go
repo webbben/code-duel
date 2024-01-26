@@ -108,9 +108,11 @@ func runTests(code string, lang string, testCases []models.TestCase) (passCount 
 			errorMessage = fmt.Sprintf("Error during execution: %s", err.Error())
 			break
 		}
-		log.Printf("Output: [%s] Expected: [%s]\n", result, expOut)
-		if result != expOut {
-			errorMessage = fmt.Sprintf("Failed test case [%s]: Result [%s] Expected [%s]", input, result, expOut)
+		expOutFmt := formatInput(lang, expOut, true) // get the correctly formatted inputs and outputs
+		inputFmt := formatInput(lang, input, false)
+		log.Printf("Output: [%s] Expected: [%s]\n", result, expOutFmt)
+		if result != expOutFmt {
+			errorMessage = fmt.Sprintf("Failed test case [%s]: Result [%s] Expected [%s]", inputFmt, result, expOutFmt)
 			break
 		}
 		passCount++
@@ -119,7 +121,7 @@ func runTests(code string, lang string, testCases []models.TestCase) (passCount 
 }
 
 func runTestCase(code string, lang string, input any) (string, error) {
-	inputFmt := formatInput(lang, input)
+	inputFmt := formatInput(lang, input, false)
 	codeWithInput := fmt.Sprintf(code, inputFmt)
 	reqBody := map[string]interface{}{
 		"lang": lang,
@@ -149,22 +151,22 @@ func runTestCase(code string, lang string, input any) (string, error) {
 }
 
 // formats the input value to the correct format for the given language
-func formatInput(lang string, input any) string {
+func formatInput(lang string, input any, forOutput bool) string {
 	switch lang {
 	case "go":
 		// go has built in support for this!
 		return fmt.Sprintf("%#v", input)
 	case "python":
-		return formatPython(input)
+		return formatPython(input, forOutput)
 	case "bash":
-		return formatBash(input)
+		return formatBash(input, forOutput)
 	default:
 		// default to putting it in quotes like a string
 		return fmt.Sprintf("\"%s\"", input)
 	}
 }
 
-func formatPython(input any) string {
+func formatPython(input any, forOutput bool) string {
 	inputType := reflect.TypeOf(input)
 	inputValue := reflect.ValueOf(input)
 	kind := inputType.Kind()
@@ -174,7 +176,7 @@ func formatPython(input any) string {
 		inputFmt := "["
 		for i := 0; i < inputValue.Len(); i++ {
 			element := inputValue.Index(i).Interface()
-			inputFmt += formatPython(element)
+			inputFmt += formatPython(element, forOutput)
 			if i < inputValue.Len()-1 {
 				inputFmt += ","
 			}
@@ -184,6 +186,9 @@ func formatPython(input any) string {
 	}
 	// input is string
 	if kind == reflect.String {
+		if forOutput {
+			return fmt.Sprintf("%s", input) // no quotes for output
+		}
 		return fmt.Sprintf("\"%s\"", input)
 	}
 	// input is boolean
@@ -201,7 +206,7 @@ func formatPython(input any) string {
 	return fmt.Sprintf("%s", input)
 }
 
-func formatBash(input any) string {
+func formatBash(input any, forOutput bool) string {
 	inputType := reflect.TypeOf(input)
 	inputValue := reflect.ValueOf(input)
 	kind := inputType.Kind()
@@ -211,7 +216,7 @@ func formatBash(input any) string {
 		inputFmt := "["
 		for i := 0; i < inputValue.Len(); i++ {
 			element := inputValue.Index(i).Interface()
-			inputFmt += formatBash(element)
+			inputFmt += formatBash(element, forOutput)
 			if i < inputValue.Len()-1 {
 				inputFmt += " "
 			}
@@ -221,6 +226,9 @@ func formatBash(input any) string {
 	}
 	// input is string
 	if kind == reflect.String {
+		if forOutput {
+			return fmt.Sprintf("%s", input) // no quotes for output
+		}
 		return fmt.Sprintf("\"%s\"", input)
 	}
 	// input is boolean
