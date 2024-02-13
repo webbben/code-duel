@@ -1,4 +1,4 @@
-import { Typography } from "@mui/material";
+import { Grid, Typography } from "@mui/material";
 import { UserProgress } from "./Game";
 import ProgressBar from "./ProgressBar";
 
@@ -12,18 +12,24 @@ export default function PlayerInfo({ users, progressMap, caseCount }: PlayerInfo
 
     return (
         <div className="game_section" style={{ flex: "0 1 auto" }}>
-            <Typography>Player Info</Typography>
-            {users?.map((user: string) => {
+            <Typography variant="h6" textAlign={'left'}>Player Info</Typography>
+            <Grid container>
+                {users?.map((user: string) => {
 
-                return (
-                    <div style={{ display: 'flex' }}>
-                        <Typography
-                            key={user}
-                        >{user}</Typography>
-                        <ProgressBar progress={progressMap[user]} outOf={caseCount} />
-                    </div>
-                );
-            })}
+                    return (
+                        <>
+                            <Grid item xs={2}>
+                                <Typography textAlign={'left'}
+                                    key={user}
+                                >{user}</Typography>
+                            </Grid>
+                            <Grid item xs={10}>
+                                <ProgressBar progress={progressMap[user]} outOf={caseCount} />
+                            </Grid>
+                        </>
+                    );
+                })}
+            </Grid>
         </div>
     )
 }

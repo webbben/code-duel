@@ -14,7 +14,7 @@ export default function ProgressBar({ progress, outOf }: ProgressBarProps) {
             { progressArray.map((_, i) => {
                 return (
                     <>
-                        { i < progress ? <SquareRounded fontSize='medium' color='success' /> : <CropSquare /> }
+                        { i < progress ? <SquareRounded fontSize='medium' color='success' key={`${i}-prog-bar`} /> : <CropSquare key={`${i}-prog-bar`} /> }
                     </>
                 );
             })}

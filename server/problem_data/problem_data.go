@@ -5,6 +5,9 @@ import (
 	problem_01 "github.com/webbben/code-duel/problem_data/problem01"
 	problem_02 "github.com/webbben/code-duel/problem_data/problem02"
 	problem_03 "github.com/webbben/code-duel/problem_data/problem03"
+	problem_04 "github.com/webbben/code-duel/problem_data/problem04"
+	problem_06 "github.com/webbben/code-duel/problem_data/problem06"
+	problem_07 "github.com/webbben/code-duel/problem_data/problem07"
 )
 
 // map of problems to their problem IDs
@@ -14,6 +17,9 @@ var problemMap map[string]models.Problem = map[string]models.Problem{
 	"problem01": problem_01.GetProblem(),
 	"problem02": problem_02.GetProblem(),
 	"problem03": problem_03.GetProblem(),
+	"problem04": problem_04.GetProblem(),
+	"problem06": problem_06.GetProblem(),
+	"problem07": problem_07.GetProblem(),
 }
 
 // Get problem object by its ID

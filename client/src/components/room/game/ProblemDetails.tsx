@@ -35,7 +35,7 @@ export default function ProblemDetails(props: ProblemDetailsProps) {
                 </Typography>
                 <Timer initialMinutes={props.timeLimit} active />
             </div>
-            <Typography gutterBottom variant="body1">
+            <Typography gutterBottom variant="body1" sx={{ whiteSpace: 'pre-wrap'}}>
                 {props.problem.fullDesc}
             </Typography>
             <Typography gutterBottom variant="h6">
